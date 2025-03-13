@@ -18,29 +18,25 @@ public class FileSender extends Thread {
     @Override
     public void run() {
         while (true) {
-            // Get the file or folder path from the user
-            System.out.print("Enter the file/folder path to send: ");
-            String filePath = scanner.nextLine();
+            // Get the file/folder path from the user
+            System.out.print("Enter the file or folder path to send: ");
+            String path = scanner.nextLine();
 
-            File file = new File(filePath);
+            File file = new File(path);
 
             if (!file.exists()) {
-                System.out.println("File or folder not found!");
+                System.out.println("File/Folder not found!");
                 return;
             }
 
             try {
-                if (file.isDirectory()) {
-                    // Send a signal indicating a folder is being sent
-                    out.writeUTF("FOLDER");
-                    sendFolder(file, file.getAbsolutePath());
-                } else {
-                    // Send a single file
-                    out.writeUTF("FILE");
-                    sendFile(file);
+                // Check if it's a file or folder
+                if (file.isFile()) {
+                    sendFile(file, "");
+                } else if (file.isDirectory()) {
+                    sendFolder(file, file.getName());
                 }
-
-                System.out.println("File/folder sent successfully!");
+                System.out.println("File/Folder sent successfully!");
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -48,38 +44,39 @@ public class FileSender extends Thread {
         }
     }
 
-    private void sendFolder(File folder, String basePath) throws IOException {
-        File[] files = folder.listFiles();
-        if (files == null) return;
-
-        for (File file : files) {
-            if (file.isDirectory()) {
-                // Send directory metadata
-                out.writeUTF("DIR"); // Signal for directory
-                out.writeUTF(file.getAbsolutePath().substring(basePath.length() + 1)); // Relative path
-                sendFolder(file, basePath); // Recursive call
-            } else {
-                // Send file metadata
-                out.writeUTF("FILE");
-                out.writeUTF(file.getAbsolutePath().substring(basePath.length() + 1)); // Relative path
-                sendFile(file); // Send the file
-            }
-        }
-        // Signal the end of the folder's files
-        out.writeUTF("END_DIR");
-    }
-
-    private void sendFile(File file) throws IOException {
-        // Send file name and size
-        out.writeUTF(file.getName());
+    private void sendFile(File file, String relativePath) throws IOException {
+        // Send a marker to indicate this is a file
+        out.writeUTF("FILE");
+        // Send the relative path for folder reconstruction
+        out.writeUTF(relativePath + File.separator + file.getName());
+        // Send the file size
         out.writeLong(file.length());
 
-        // Send file data
+        // Send the file data
         try (FileInputStream fis = new FileInputStream(file)) {
             byte[] buffer = new byte[4096];
             int bytesRead;
             while ((bytesRead = fis.read(buffer)) != -1) {
                 out.write(buffer, 0, bytesRead);
+            }
+        }
+    }
+
+    private void sendFolder(File folder, String relativePath) throws IOException {
+        // Send a marker to indicate this is a folder
+        out.writeUTF("FOLDER");
+        // Send the folder name or relative path
+        out.writeUTF(relativePath);
+
+        // Recursively process all contents of the folder
+        File[] files = folder.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    sendFile(file, relativePath);
+                } else if (file.isDirectory()) {
+                    sendFolder(file, relativePath + File.separator + file.getName());
+                }
             }
         }
     }

@@ -5,7 +5,8 @@ import java.net.*;
 import java.util.Scanner;
 
 public class P2PChat {
-    static String ip = "192.168.67.36";
+    static String ip = "192.168.107.144";
+    static String destinationPath = "D:\socket messaging app\received_files"; 
 
     public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in);
