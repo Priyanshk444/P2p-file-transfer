@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:p2p/screens/socket_service.dart';
 import 'package:http/http.dart' as http;
+import 'package:p2p/widgets/file_list.dart';
 import 'dart:convert';
 
 import 'package:p2p/widgets/message_bubble.dart';
@@ -111,7 +112,16 @@ class _HomeScreenState extends State<HomeScreen>
                         SizedBox(height: 10),
                         _infoContainer('No user selected', height: 26),
                         SizedBox(height: 10),
-                        Expanded(child: _infoContainer('', height: null)),
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 45, 45, 45),
+                              border: Border.all(
+                                  color: Color.fromARGB(255, 24, 24, 24)),
+                            ),
+                            child: FileList(),
+                          ),
+                        ),
                         SizedBox(height: 10),
                         Row(
                           children: [
