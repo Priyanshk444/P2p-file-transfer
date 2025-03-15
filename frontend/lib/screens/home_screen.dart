@@ -6,6 +6,7 @@ import 'package:p2p/widgets/file_list.dart';
 import 'dart:convert';
 
 import 'package:p2p/widgets/message_bubble.dart';
+import 'package:p2p/widgets/settings_widget.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -78,7 +79,12 @@ class _HomeScreenState extends State<HomeScreen>
                   _selectFolder();
                 }),
                 SizedBox(width: 10),
-                _button("Settings", () {}),
+                _button(
+                  "Settings",
+                  () {
+                    showAnimatedSettingsDialog(context);
+                  },
+                ),
               ],
             ),
             SizedBox(height: 10),
@@ -248,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   labelColor: Colors.white,
                                   unselectedLabelColor:
                                       Color.fromARGB(255, 159, 159, 159),
-                                  indicatorColor: Colors.blue,
+                                  indicatorColor: Colors.teal,
                                   tabs: [
                                     Tab(text: "Group Chat"),
                                     Tab(text: "Private Chat"),
@@ -336,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   textAlign: TextAlign.left,
                                   textAlignVertical: TextAlignVertical.top,
                                   decoration: InputDecoration(
-                                    hintText: 'Send a message',
+                                    hintText: 'Enter a message',
                                     hintStyle: TextStyle(
                                       color: Colors.white.withOpacity(0.6),
                                     ),
@@ -507,5 +513,25 @@ class _HomeScreenState extends State<HomeScreen>
     } catch (e) {
       print('Exception: $e');
     }
+  }
+
+  void showAnimatedSettingsDialog(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Settings",
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return const SettingsDialog();
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.80, end: 1.0).animate(animation),
+            child: child,
+          ),
+        );
+      },
+    );
   }
 }

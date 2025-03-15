@@ -54,269 +54,271 @@ class _FormContentState extends State<FormContent> {
   SocketService socketService = SocketService();
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 0),
-      child: SingleChildScrollView(
-        child: SizedBox(
-          height: 400,
-          width: 400,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  ' Username',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 5),
-                SizedBox(
-                  child: TextFormField(
-                    controller: _userName,
-                    decoration: InputDecoration(
-                      hintText: "Enter Username",
-                      hintStyle: const TextStyle(
-                          color: Color.fromARGB(255, 159, 159, 159)),
-                      filled: true,
-                      fillColor: const Color.fromARGB(255, 45, 45, 45),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(
-                            color: Color.fromARGB(255, 24, 24, 24)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(
-                            color: Color.fromARGB(255, 220, 188, 255)),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(
-                          color: Color.fromARGB(255, 201, 156, 153),
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(
-                          color: Color.fromARGB(255, 201, 156, 153),
-                        ),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.only(right : 80, left: 80, bottom: 20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                ' Username',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 5),
+              SizedBox(
+                child: TextFormField(
+                  controller: _userName,
+                  decoration: InputDecoration(
+                    hintText: "Enter Username",
+                    hintStyle: const TextStyle(
+                        color: Color.fromARGB(255, 159, 159, 159)),
+                    filled: true,
+                    fillColor: const Color.fromARGB(255, 45, 45, 45),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 24, 24, 24)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 220, 188, 255)),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                        color: Color.fromARGB(255, 201, 156, 153),
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Username cannot be empty';
-                      }
-                      if (value.length < 3) {
-                        return 'Username must be at least 3 characters long';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-                const Text(
-                  ' Server IP',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 5),
-                SizedBox(
-                  child: TextFormField(
-                    controller: _serverIP,
-                    decoration: InputDecoration(
-                      hintText: "Enter Server IP",
-                      hintStyle: const TextStyle(
-                          color: Color.fromARGB(255, 159, 159, 159)),
-                      filled: true,
-                      fillColor: const Color.fromARGB(255, 45, 45, 45),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(
-                            color: Color.fromARGB(255, 24, 24, 24)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(
-                            color: Color.fromARGB(255, 220, 188, 255)),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(
-                          color: Color.fromARGB(255, 201, 156, 153),
-                        ),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(
-                          color: Color.fromARGB(255, 201, 156, 153),
-                        ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                        color: Color.fromARGB(255, 201, 156, 153),
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter an IP address';
-                      }
-                      final ipRegex = RegExp(
-                          r'^((25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$');
-                      if (!ipRegex.hasMatch(value)) {
-                        return 'Please enter a valid IP address';
-                      }
-                      return null;
-                    },
                   ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Username cannot be empty';
+                    }
+                    if (value.length < 3) {
+                      return 'Username must be at least 3 characters long';
+                    }
+                    return null;
+                  },
                 ),
-                const SizedBox(height: 10),
-                const Text(
-                  ' Share Folder Path',
-                  style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Text(
+                ' Server IP',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 5),
+              SizedBox(
+                child: TextFormField(
+                  controller: _serverIP,
+                  decoration: InputDecoration(
+                    hintText: "Enter Server IP",
+                    hintStyle: const TextStyle(
+                        color: Color.fromARGB(255, 159, 159, 159)),
+                    filled: true,
+                    fillColor: const Color.fromARGB(255, 45, 45, 45),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 24, 24, 24)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 220, 188, 255)),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                        color: Color.fromARGB(255, 201, 156, 153),
+                      ),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                        color: Color.fromARGB(255, 201, 156, 153),
+                      ),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter an IP address';
+                    }
+                    final ipRegex = RegExp(
+                        r'^((25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$');
+                    if (!ipRegex.hasMatch(value)) {
+                      return 'Please enter a valid IP address';
+                    }
+                    return null;
+                  },
                 ),
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        child: TextFormField(
-                          controller: _shareFolderPath,
-                          decoration: InputDecoration(
-                            hintText: "Enter Share Folder Path",
-                            hintStyle: const TextStyle(
-                                color: Color.fromARGB(255, 159, 159, 159)),
-                            filled: true,
-                            fillColor: const Color.fromARGB(255, 45, 45, 45),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(4),
-                              borderSide: const BorderSide(
-                                  color: Color.fromARGB(255, 24, 24, 24)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(4),
-                              borderSide: const BorderSide(
-                                color: Color.fromARGB(255, 220, 188, 255),
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(4),
-                              borderSide: const BorderSide(
-                                color: Color.fromARGB(255, 201, 156, 153),
-                              ),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(4),
-                              borderSide: const BorderSide(
-                                color: Color.fromARGB(255, 201, 156, 153),
-                              ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                ' Share Folder Path',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 5),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      child: TextFormField(
+                        controller: _shareFolderPath,
+                        decoration: InputDecoration(
+                          hintText: "Enter Share Folder Path",
+                          hintStyle: const TextStyle(
+                              color: Color.fromARGB(255, 159, 159, 159)),
+                          filled: true,
+                          fillColor: const Color.fromARGB(255, 45, 45, 45),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(
+                                color: Color.fromARGB(255, 24, 24, 24)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 220, 188, 255),
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Share folder path cannot be empty';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        _selectFolder(_shareFolderPath);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        fixedSize: const Size(100, 48),
-                        backgroundColor: const Color.fromARGB(255, 54, 54, 54),
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 16.0, horizontal: 32.0),
-                        shape: RoundedRectangleBorder(
-                          side: const BorderSide(
-                              color: Color.fromARGB(255, 24, 24, 24)),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      child: const Text(
-                        "Open",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  ' Recieve Folder Path',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        child: TextFormField(
-                          controller: _receiveFolderPath,
-                          decoration: InputDecoration(
-                            hintText: "Enter Receive Folder Path",
-                            hintStyle: const TextStyle(
-                                color: Color.fromARGB(255, 159, 159, 159)),
-                            filled: true,
-                            fillColor: const Color.fromARGB(255, 45, 45, 45),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(4),
-                              borderSide: const BorderSide(
-                                  color: Color.fromARGB(255, 24, 24, 24)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(4),
-                              borderSide: const BorderSide(
-                                color: Color.fromARGB(255, 220, 188, 255),
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(4),
-                              borderSide: const BorderSide(
-                                color: Color.fromARGB(255, 201, 156, 153),
-                              ),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(4),
-                              borderSide: const BorderSide(
-                                color: Color.fromARGB(255, 201, 156, 153),
-                              ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 201, 156, 153),
                             ),
                           ),
-                          // validator: (value) {
-                          //   if (value == null || value.isEmpty) {
-                          //     return 'Receive folder path cannot be empty';
-                          //   }
-                          //   return null;
-                          // },
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 201, 156, 153),
+                            ),
+                          ),
                         ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Share folder path cannot be empty';
+                          }
+                          return null;
+                        },
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        _selectFolder(_receiveFolderPath);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        fixedSize: const Size(100, 48),
-                        backgroundColor: const Color.fromARGB(255, 54, 54, 54),
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 16.0, horizontal: 32.0),
-                        shape: RoundedRectangleBorder(
-                          side: const BorderSide(
-                              color: Color.fromARGB(255, 24, 24, 24)),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      child: const Text(
-                        "Open",
-                        style: TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      _selectFolder(_shareFolderPath);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: const Size(100, 48),
+                      backgroundColor: const Color.fromARGB(255, 54, 54, 54),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16.0, horizontal: 32.0),
+                      shape: RoundedRectangleBorder(
+                        side: const BorderSide(
+                            color: Color.fromARGB(255, 24, 24, 24)),
+                        borderRadius: BorderRadius.circular(4),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
+                    child: const Text(
+                      "Open",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                ' Recieve Folder Path',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 5),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      child: TextFormField(
+                        controller: _receiveFolderPath,
+                        decoration: InputDecoration(
+                          hintText: "Enter Receive Folder Path",
+                          hintStyle: const TextStyle(
+                              color: Color.fromARGB(255, 159, 159, 159)),
+                          filled: true,
+                          fillColor: const Color.fromARGB(255, 45, 45, 45),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(
+                                color: Color.fromARGB(255, 24, 24, 24)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 220, 188, 255),
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 201, 156, 153),
+                            ),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 201, 156, 153),
+                            ),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Receive folder path cannot be empty';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      _selectFolder(_receiveFolderPath);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: const Size(100, 48),
+                      backgroundColor: const Color.fromARGB(255, 54, 54, 54),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16.0, horizontal: 32.0),
+                      shape: RoundedRectangleBorder(
+                        side: const BorderSide(
+                            color: Color.fromARGB(255, 24, 24, 24)),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    child: const Text(
+                      "Open",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
                   onPressed: () async {
+                    // if (!_formKey.currentState!.validate()) {
+                    //   return;
+                    // }
                     // socketService.connect();
                     // if (socketRef == null) {
                     //   print("socket not defined");
@@ -335,7 +337,7 @@ class _FormContentState extends State<FormContent> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    fixedSize: const Size(400, 38),
+                    // fixedSize: const Size(430, 38),
                     backgroundColor: const Color.fromARGB(255, 54, 54, 54),
                     padding: const EdgeInsets.symmetric(
                         vertical: 16.0, horizontal: 32.0),
@@ -350,8 +352,8 @@ class _FormContentState extends State<FormContent> {
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

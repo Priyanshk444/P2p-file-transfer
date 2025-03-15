@@ -31,7 +31,6 @@ class SocketService with ChangeNotifier {
       });
     });
 
-    // Ensure old listeners are removed before adding new ones
     socket!.off('message');
     socket!.on('message', (data) {
       print('Received message: $data');
