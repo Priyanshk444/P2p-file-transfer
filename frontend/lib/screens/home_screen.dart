@@ -144,7 +144,92 @@ class _HomeScreenState extends State<HomeScreen>
                       children: [
                         Text('Users', style: TextStyle(color: Colors.white)),
                         SizedBox(height: 10),
-                        _infoContainer('', height: size.height * 0.2),
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 45, 45, 45),
+                              border: Border.all(
+                                  color: Color.fromARGB(255, 24, 24, 24)),
+                            ),
+                            child: SingleChildScrollView(
+                              child: Padding(
+                                padding: EdgeInsets.all(10),
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.transparent,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.public,
+                                            color: Colors.green,
+                                            size: 18,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Mahil',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.transparent,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.public_off,
+                                            color: Colors.red,
+                                            size: 18,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'User 1',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.transparent,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.public,
+                                            color: Colors.green,
+                                            size: 18,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'User 2',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                         SizedBox(height: 10),
                         DefaultTabController(
                           length: 2,
@@ -393,7 +478,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _getUsers() async {
-    final url = Uri.parse('http://192.168.67.93:9000/api/users/users'); 
+    final url = Uri.parse('http://192.168.67.93:9000/api/users/users');
     try {
       final response = await http.get(url);
 
@@ -409,7 +494,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _getUserFiles() async {
-    final url = Uri.parse('http://192.168.67.93:9000/api/users/files'); 
+    final url = Uri.parse('http://192.168.67.93:9000/api/users/files');
     try {
       final response = await http.get(url);
 
