@@ -52,11 +52,12 @@ class _FormContentState extends State<FormContent> {
 
   final _formKey = GlobalKey<FormState>();
   SocketService socketService = SocketService();
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.only(right : 80, left: 80, bottom: 20),
+        padding: const EdgeInsets.only(right: 80, left: 80, bottom: 20),
         child: Form(
           key: _formKey,
           child: Column(
@@ -319,16 +320,12 @@ class _FormContentState extends State<FormContent> {
                     // if (!_formKey.currentState!.validate()) {
                     //   return;
                     // }
-                    // socketService.connect();
-                    // if (socketRef == null) {
-                    //   print("socket not defined");
+                    // if (!socketService.isConnected()) {
+                    //   socketService.connect();
+                    // } else {
+                    //   print("Socket already connected.");
                     // }
-                    // socketRef.emit("register", {
-                    //   "username": _userName.text,
-                    //   "fileList": getFolderContents(_shareFolderPath.text),
-                    //   "ip": await getLocalIPAddress()
-                    //   // "recieveFolder" : _receiveFolderPath.text,
-                    // });
+          
                     appWindow.size = const Size(1000, 800);
                     appWindow.minSize = const Size(1000, 800);
                     appWindow.alignment = Alignment.center;
@@ -359,25 +356,6 @@ class _FormContentState extends State<FormContent> {
       ),
     );
   }
-
-  // void _submitForm() {
-  //   final socket = IO.io('ws://192.168.66.45:9000', <String, dynamic>{
-  //     'transports': ['websocket'],
-  //     'autoConnect': true,
-  //   });
-
-  //   socket.on('connect', (_) {
-  //     print('Connected to server with socket ID: ${socket.id}');
-  //   });
-
-  //   socket.on('connect_error', (err) {
-  //     print('Connection error: ${err.toString()}');
-  //   });
-
-  //   socket.on('disconnect', (_) {
-  //     print('Disconnected from server.');
-  //   });
-  // }
 
   Future<String> getLocalIPAddress() async {
     List<NetworkInterface> interfaces = await NetworkInterface.list();
@@ -411,7 +389,6 @@ class _FormContentState extends State<FormContent> {
           "type": type,
         });
 
-        // If it's a folder, call recursively
         if (type == "folder") {
           results.addAll(getFolderContents(entity.path));
         }
@@ -430,8 +407,6 @@ class _FormContentState extends State<FormContent> {
       setState(() {
         controller.text = selectedFolder;
       });
-    } else {
-      print("No folder selected.");
     }
   }
 }

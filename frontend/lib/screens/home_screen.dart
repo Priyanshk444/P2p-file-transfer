@@ -1,10 +1,10 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:p2p/screens/recieve_service.dart';
 import 'package:p2p/screens/socket_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:p2p/widgets/file_list.dart';
 import 'dart:convert';
-
 import 'package:p2p/widgets/message_bubble.dart';
 import 'package:p2p/widgets/settings_widget.dart';
 import 'package:provider/provider.dart';
@@ -21,9 +21,11 @@ class _HomeScreenState extends State<HomeScreen>
   final TextEditingController _messageController = TextEditingController();
   late TabController _tabController;
   List<dynamic> messages = [];
-  // SocketService socketService = SocketService();
+  SocketService socketService = SocketService();
   String selectedFolder = "";
   String selectedFile = "";
+  dynamic selectedUser;
+  List<Map<String, dynamic>> userFileList = [];
 
   @override
   void initState() {
@@ -44,12 +46,14 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    socketService.disconnect();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final socketService = Provider.of<SocketService>(context);
+    // final SocketService socketService = SocketService();
     final size = MediaQuery.of(context).size;
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 54, 54, 54),
@@ -116,7 +120,11 @@ class _HomeScreenState extends State<HomeScreen>
                           ],
                         ),
                         SizedBox(height: 10),
-                        _infoContainer('No user selected', height: 26),
+                        _infoContainer(
+                            selectedUser == null
+                                ? 'No user selected'
+                                : selectedUser['username'],
+                            height: 26),
                         SizedBox(height: 10),
                         Expanded(
                           child: Container(
@@ -125,7 +133,13 @@ class _HomeScreenState extends State<HomeScreen>
                               border: Border.all(
                                   color: Color.fromARGB(255, 24, 24, 24)),
                             ),
-                            child: FileList(),
+                            child: userFileList.isEmpty
+                                ? Center(
+                                    child: Text('no user selected'),
+                                  )
+                                : FileList(
+                                    fileList: userFileList,
+                                  ),
                           ),
                         ),
                         SizedBox(height: 10),
@@ -136,7 +150,11 @@ class _HomeScreenState extends State<HomeScreen>
                                     style: TextStyle(color: Colors.white))),
                             _button("Info", () {}),
                             SizedBox(width: 10),
-                            _button("Download", () {}),
+                            _button("Download", () async {
+                              final fileReceiver = FileReceiver(
+                                  senderIP: "192.168.67.93", senderPort: 7000);
+                              await fileReceiver.startReceiving();
+                            }),
                           ],
                         ),
                       ],
@@ -157,83 +175,57 @@ class _HomeScreenState extends State<HomeScreen>
                               border: Border.all(
                                   color: Color.fromARGB(255, 24, 24, 24)),
                             ),
-                            child: SingleChildScrollView(
-                              child: Padding(
-                                padding: EdgeInsets.all(10),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.transparent,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.public,
-                                            color: Colors.green,
-                                            size: 18,
+                            child: socketService.users.isEmpty
+                                ? Center(child: Container())
+                                : ListView.builder(
+                                    itemExtent: 40,
+                                    itemCount: socketService.users.length,
+                                    itemBuilder: (context, index) {
+                                      var user = socketService.users[index];
+                                      return GestureDetector(
+                                        onTap: () async {
+                                          setState(() {
+                                            selectedUser = user;
+                                          });
+                                          setState(() {
+                                            _getUserFiles(user['_id']);
+                                          });
+                                        },
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              vertical: 10, horizontal: 16),
+                                          decoration: BoxDecoration(
+                                            color: selectedUser == user
+                                                ? Colors.teal.withOpacity(0.7)
+                                                : Colors.transparent,
                                           ),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'Mahil',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                            ),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                user['status'] == 'online'
+                                                    ? Icons.public
+                                                    : Icons.public_off,
+                                                color:
+                                                    user['status'] == 'online'
+                                                        ? Colors.green
+                                                        : Colors.red,
+                                                size: 18,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                user[
+                                                    'username'], // Accessing the 'name' field from JSON
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 5),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.transparent,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.public_off,
-                                            color: Colors.red,
-                                            size: 18,
-                                          ),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'User 1',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 5),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.transparent,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.public,
-                                            color: Colors.green,
-                                            size: 18,
-                                          ),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'User 2',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+                                        ),
+                                      );
+                                    },
+                                  ),
                           ),
                         ),
                         SizedBox(height: 10),
@@ -371,8 +363,8 @@ class _HomeScreenState extends State<HomeScreen>
                                         'time': TimeOfDay.now(),
                                       });
                                     });
-                                    socketService
-                                        .sendMessage(_messageController.text);
+                                    socketService.sendGroupMessage(
+                                        _messageController.text.trim());
                                     _messageController.clear();
                                   },
                                 ),
@@ -425,8 +417,6 @@ class _HomeScreenState extends State<HomeScreen>
       setState(() {
         selectedFolder = result;
       });
-    } else {
-      print("No folder selected.");
     }
   }
 
@@ -435,8 +425,6 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (result != null && result.files.single.path != null) {
       selectedFile = result.files.single.path!;
-    } else {
-      print("No file selected.");
     }
   }
 
@@ -484,34 +472,41 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _getUsers() async {
-    final url = Uri.parse('http://192.168.67.93:9000/api/users/users');
+    final url = Uri.parse('http://192.168.66.111:9000/api/users/users');
     try {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print('Data: $data');
+        setState(() {
+          socketService.users = jsonDecode(response.body);
+        });
+        print('Data: $socketService.users');
       } else {
         print('Error: ${response.statusCode}');
       }
     } catch (e) {
-      print('Exception: $e');
+      print('Exception is : $e');
     }
   }
 
-  void _getUserFiles() async {
-    final url = Uri.parse('http://192.168.67.93:9000/api/users/files');
+  void _getUserFiles(String userId) async {
+    final url = Uri.parse('http://192.168.66.111:9000/api/users/files/$userId');
     try {
       final response = await http.get(url);
-
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print('Data: $data');
+        final data =
+            jsonDecode(response.body) as List; // Decode as a List first
+        setState(() {
+          userFileList = data
+              .map((e) => e as Map<String, dynamic>)
+              .toList(); // Proper casting for each element
+          print('Data: $userFileList');
+        });
       } else {
         print('Error: ${response.statusCode}');
       }
     } catch (e) {
-      print('Exception: $e');
+      print('Exception is this : $e');
     }
   }
 

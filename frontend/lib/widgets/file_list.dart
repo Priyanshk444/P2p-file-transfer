@@ -1,99 +1,105 @@
 import 'package:flutter/material.dart';
 
 class FileList extends StatefulWidget {
-  const FileList({super.key});
+  const FileList({super.key, required this.fileList});
+  final List<Map<String, dynamic>> fileList;
 
   @override
   State<FileList> createState() => _FileListState();
 }
 
-class _FileListState extends State<FileList>
-    with TickerProviderStateMixin {
-  final List<Map<String, dynamic>> fileStructure = [
-    {"name": "notes.txt", "type": "file"},
-    {"name": "blueprint.sketch", "type": "file"},
-    {"name": "manual.pdf", "type": "file"},
-    {
-      "name": "Work",
-      "type": "folder",
-      "isExpanded": false,
-      "children": [
-        {"name": "task_list.docx", "type": "file"},
-        {"name": "summary.pdf", "type": "file"},
-        {
-          "name": "Meetings",
-          "type": "folder",
-          "isExpanded": false,
-          "children": [
-            {"name": "agenda_q1.doc", "type": "file"},
-            {"name": "minutes_q2.doc", "type": "file"},
-          ],
+class _FileListState extends State<FileList> with TickerProviderStateMixin {
+  late List<Map<String, dynamic>> fileStructure;
+
+  @override
+  void initState() {
+    super.initState();
+    fileStructure = convertToNestedStructure(widget.fileList);
+  }
+
+  List<Map<String, dynamic>> convertToNestedStructure(
+      List<Map<String, dynamic>> fileList) {
+    // Helper function to create nested folder structure recursively
+    void addToNestedStructure(Map<String, dynamic> currentFolder,
+        List<String> pathParts, String name, String type) {
+      if (pathParts.isEmpty) return;
+
+      String currentPart = pathParts.removeAt(0);
+
+      bool isFile =
+          currentPart.contains('.'); // Check if it's a file by extension
+
+      if (pathParts.isEmpty && isFile) {
+        (currentFolder['children'] ??= []).add({
+          "name": currentPart,
+          "fileType": "file",
+        });
+        return;
+      }
+
+      // Find or create folder in the current structure
+      Map<String, dynamic> folder = currentFolder['children']?.firstWhere(
+        (child) =>
+            child['name'] == currentPart && child['fileType'] == "folder",
+        orElse: () {
+          Map<String, dynamic> newFolder = {
+            "name": currentPart,
+            "fileType": "folder",
+            "isExpanded": false,
+            "children": [],
+          };
+          (currentFolder['children'] ??= []).add(newFolder);
+          return newFolder;
         },
-      ],
-    },
-    {
-      "name": "Development",
-      "type": "folder",
-      "isExpanded": false,
-      "children": [
-        {
-          "name": "Flutter Project",
-          "type": "folder",
-          "isExpanded": false,
-          "children": [
-            {"name": "home.dart", "type": "file"},
-            {"name": "config.yaml", "type": "file"},
-            {
-              "name": "Flutter ",
-              "type": "folder",
+      );
+
+      addToNestedStructure(folder, pathParts, name, type);
+    }
+
+    List<Map<String, dynamic>> result = [];
+
+    // Traverse the file list and build the nested structure
+    for (var file in fileList) {
+      List<String> pathParts =
+          file['path'].split('\\'); // Split using backslash
+      String name = file['name'];
+      String type = file['fileType']; // Correct key for file type
+
+      if (pathParts.length == 1) {
+        // Top-level file or folder
+        if (type == "file" || name.contains('.')) {
+          result.add({"name": name, "fileType": "file"});
+        } else {
+          result.add({
+            "name": name,
+            "fileType": "folder",
+            "isExpanded": false,
+            "children": []
+          });
+        }
+      } else {
+        // Nested files or folders
+        String rootFolder = pathParts.removeAt(0);
+        Map<String, dynamic> folder = result.firstWhere(
+          (item) => item['name'] == rootFolder && item['fileType'] == "folder",
+          orElse: () {
+            Map<String, dynamic> newFolder = {
+              "name": rootFolder,
+              "fileType": "folder",
               "isExpanded": false,
-              "children": [
-                {"name": "home.dart", "type": "file"},
-                {"name": "config.yaml", "type": "file"},
-                {
-                  "name": " Project",
-                  "type": "folder",
-                  "isExpanded": false,
-                  "children": [
-                    {"name": "home.dart", "type": "file"},
-                    {"name": "config.yaml", "type": "file"},
-                    {
-                      "name": "Flutter Proj",
-                      "type": "folder",
-                      "isExpanded": false,
-                      "children": [
-                        {"name": "home.dart", "type": "file"},
-                        {"name": "config.yaml", "type": "file"},
-                        {
-                          "name": "Flutter ject",
-                          "type": "folder",
-                          "isExpanded": false,
-                          "children": [
-                            {"name": "home.dart", "type": "file"},
-                            {"name": "config.yaml", "type": "file"},
-                          ],
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-        {"name": "server.py", "type": "file"},
-      ],
-    },
-    {
-      "name": "Media",
-      "type": "folder",
-      "isExpanded": false,
-      "children": [
-        {"name": "track1.mp3", "type": "file"},
-        {"name": "track2.mp3", "type": "file"},
-      ],
-    },
-  ];
+              "children": [],
+            };
+            result.add(newFolder);
+            return newFolder;
+          },
+        );
+
+        addToNestedStructure(folder, pathParts, name, type);
+      }
+    }
+
+    return result;
+  }
 
   String? _selectedItem;
 
@@ -108,7 +114,7 @@ class _FileListState extends State<FileList>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: items.map((item) {
         bool isSelected = _selectedItem == item["name"];
-        bool isFolder = item["type"] == "folder";
+        bool isFolder = item["fileType"] == "folder"; // Use updated key
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,9 +187,13 @@ class _FileListState extends State<FileList>
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: buildFileTree(fileStructure),
+      scrollDirection: Axis.horizontal, // Allow horizontal scrolling
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical, // Allow vertical scrolling
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: buildFileTree(fileStructure),
+        ),
       ),
     );
   }
