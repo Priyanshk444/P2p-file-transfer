@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:p2p/providers/files_provider.dart';
 import 'package:p2p/screens/info_screen.dart';
 import 'package:p2p/screens/socket_service.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SocketService()..connect()),
+        ChangeNotifierProvider(create: (_) => FileState()),
       ],
       child: const MyApp(),
     ),

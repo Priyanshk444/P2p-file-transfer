@@ -2,7 +2,6 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:p2p/screens/home_screen.dart';
-import 'package:p2p/screens/socket_service.dart';
 import 'dart:io';
 
 class InfoScreen extends StatelessWidget {
@@ -49,9 +48,7 @@ class _FormContentState extends State<FormContent> {
   final TextEditingController _receiveFolderPath = TextEditingController();
   final TextEditingController _serverIP = TextEditingController();
   final TextEditingController _userName = TextEditingController();
-
   final _formKey = GlobalKey<FormState>();
-  SocketService socketService = SocketService();
 
   @override
   Widget build(BuildContext context) {
@@ -325,12 +322,18 @@ class _FormContentState extends State<FormContent> {
                     // } else {
                     //   print("Socket already connected.");
                     // }
-          
+
                     appWindow.size = const Size(1000, 800);
                     appWindow.minSize = const Size(1000, 800);
                     appWindow.alignment = Alignment.center;
+                    String localIPAdress = await getLocalIPAddress();
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => const HomeScreen()),
+                      MaterialPageRoute(builder: (ctx) => HomeScreen(currentUser: {
+                        "username": _userName.text,
+                        "serverIP": localIPAdress,
+                        "shareFolderPath": _shareFolderPath.text,
+                        "receiveFolderPath": _receiveFolderPath.text,
+                      })),
                     );
                   },
                   style: ElevatedButton.styleFrom(

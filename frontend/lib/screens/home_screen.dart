@@ -1,6 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:p2p/screens/recieve_service.dart';
+import 'package:p2p/providers/files_provider.dart';
 import 'package:p2p/screens/socket_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:p2p/widgets/file_list.dart';
@@ -10,7 +10,8 @@ import 'package:p2p/widgets/settings_widget.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, required this.currentUser});
+  final Map<String, dynamic> currentUser;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -20,7 +21,6 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   late TabController _tabController;
-  List<dynamic> messages = [];
   SocketService socketService = SocketService();
   String selectedFolder = "";
   String selectedFile = "";
@@ -37,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen>
     _tabController.addListener(() {
       setState(() {});
     });
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<SocketService>(context, listen: false).connect();
     });
@@ -65,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen>
             Row(
               children: [
                 Text(
-                  'P2P / Mahil',
+                  'P2P / ${widget.currentUser['username']}',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 20,
@@ -128,6 +127,7 @@ class _HomeScreenState extends State<HomeScreen>
                         SizedBox(height: 10),
                         Expanded(
                           child: Container(
+                            width: double.infinity,
                             decoration: BoxDecoration(
                               color: const Color.fromARGB(255, 45, 45, 45),
                               border: Border.all(
@@ -139,6 +139,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   )
                                 : FileList(
                                     fileList: userFileList,
+                                    socketService: socketService,
                                   ),
                           ),
                         ),
@@ -146,14 +147,24 @@ class _HomeScreenState extends State<HomeScreen>
                         Row(
                           children: [
                             Expanded(
-                                child: Text('No file or folder selected',
+                                child: Text(
+                                    Provider.of<FileState>(context)
+                                            .selectedItem['name'] ??
+                                        'No file or folder selected',
                                     style: TextStyle(color: Colors.white))),
                             _button("Info", () {}),
                             SizedBox(width: 10),
                             _button("Download", () async {
-                              final fileReceiver = FileReceiver(
-                                  senderIP: "192.168.67.93", senderPort: 7000);
-                              await fileReceiver.startReceiving();
+                              final selectedFile =
+                                  Provider.of<FileState>(context, listen: false)
+                                      .selectedItem;
+                              if (selectedFile != null) {
+                                socketService.downloadFile(selectedFile['_id']);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('No file selected!')),
+                                );
+                              }
                             }),
                           ],
                         ),
@@ -170,6 +181,7 @@ class _HomeScreenState extends State<HomeScreen>
                         SizedBox(height: 10),
                         Expanded(
                           child: Container(
+                            padding: EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: const Color.fromARGB(255, 45, 45, 45),
                               border: Border.all(
@@ -186,18 +198,20 @@ class _HomeScreenState extends State<HomeScreen>
                                         onTap: () async {
                                           setState(() {
                                             selectedUser = user;
+                                            userFileList = [];
                                           });
-                                          setState(() {
-                                            _getUserFiles(user['_id']);
-                                          });
+                                          _getUserFiles(user['_id']);
                                         },
                                         child: Container(
                                           padding: EdgeInsets.symmetric(
                                               vertical: 10, horizontal: 16),
                                           decoration: BoxDecoration(
                                             color: selectedUser == user
-                                                ? Colors.teal.withOpacity(0.7)
+                                                ? Colors.teal.withAlpha(
+                                                    (0.7 * 255).toInt())
                                                 : Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(5),
                                           ),
                                           child: Row(
                                             children: [
@@ -273,11 +287,11 @@ class _HomeScreenState extends State<HomeScreen>
                                           Expanded(
                                             child: ListView.builder(
                                               padding: EdgeInsets.all(8),
-                                              itemCount:
-                                                  socketService.messages.length,
+                                              itemCount: socketService
+                                                  .groupMessage.length,
                                               itemBuilder: (context, index) {
                                                 final message = socketService
-                                                    .messages[index];
+                                                    .groupMessage[index];
                                                 bool isMe = message['sender'] ==
                                                     'Mahil';
                                                 return Align(
@@ -299,9 +313,42 @@ class _HomeScreenState extends State<HomeScreen>
                                       ),
                                     ),
                                     _infoContainer(
-                                      '',
+                                      'No user selected',
                                       height: size.height * 0.2,
                                     ),
+                                    // if (selectedUser != null)
+                                    //   Container(
+                                    //     height: size.height * 0.26,
+                                    //     decoration: BoxDecoration(
+                                    //       color: Color.fromARGB(255, 45, 45, 45),
+                                    //       border: Border.all(
+                                    //         color: Color.fromARGB(255, 24, 24, 24),
+                                    //       ),
+                                    //     ),
+                                    //     child: Column(
+                                    //       children: [
+                                    //         Expanded(
+                                    //           child: ListView.builder(
+                                    //             padding: EdgeInsets.all(8),
+                                    //             itemCount: socketService.messages.length,
+                                    //             itemBuilder: (context, index) {
+                                    //               final message = socketService.messages[index];
+                                    //               bool isMe = message['sender'] == 'Mahil';
+                                    //               return Align(
+                                    //                 alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                                    //                 child: MessageBubble(
+                                    //                   username: 'Mahil',
+                                    //                   message: message['message']!,
+                                    //                   isMe: isMe,
+                                    //                   time: TimeOfDay.now(),
+                                    //                 ),
+                                    //               );
+                                    //             },
+                                    //           ),
+                                    //         ),
+                                    //       ],
+                                    //     ),
+                                    //   ),
                                   ],
                                 ),
                               ),
@@ -336,7 +383,8 @@ class _HomeScreenState extends State<HomeScreen>
                                   decoration: InputDecoration(
                                     hintText: 'Enter a message',
                                     hintStyle: TextStyle(
-                                      color: Colors.white.withOpacity(0.6),
+                                      color: Colors.white
+                                          .withAlpha((0.7 * 255).toInt()),
                                     ),
                                     border: InputBorder.none,
                                   ),
@@ -354,17 +402,24 @@ class _HomeScreenState extends State<HomeScreen>
                                         .isEmpty) {
                                       return;
                                     }
-                                    setState(() {
-                                      socketService.messages.add({
-                                        'sender': 'Mahil',
-                                        'message':
-                                            _messageController.text.trim(),
-                                        'isMe': true,
-                                        'time': TimeOfDay.now(),
+                                    if (_tabController.index == 0) {
+                                      socketService.sendGroupMessage(
+                                        _messageController.text.trim(),
+                                      );
+                                      setState(() {
+                                        socketService.groupMessage.add({
+                                          'sender': 'Mahil',
+                                          'message':
+                                              _messageController.text.trim(),
+                                          'isMe': true,
+                                          'time': TimeOfDay.now(),
+                                        });
                                       });
-                                    });
-                                    socketService.sendGroupMessage(
-                                        _messageController.text.trim());
+                                    } else {
+                                      socketService.sendDirectMessage(
+                                        _messageController.text.trim(),
+                                      );
+                                    }
                                     _messageController.clear();
                                   },
                                 ),
@@ -494,13 +549,10 @@ class _HomeScreenState extends State<HomeScreen>
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        final data =
-            jsonDecode(response.body) as List; // Decode as a List first
+        final data = jsonDecode(response.body) as List;
         setState(() {
-          userFileList = data
-              .map((e) => e as Map<String, dynamic>)
-              .toList(); // Proper casting for each element
-          print('Data: $userFileList');
+          userFileList = data.map((e) => e as Map<String, dynamic>).toList();
+          // print('Data: $userFileList');
         });
       } else {
         print('Error: ${response.statusCode}');

@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:p2p/providers/files_provider.dart';
+import 'package:p2p/screens/socket_service.dart';
+import 'package:provider/provider.dart';
 
 class FileList extends StatefulWidget {
-  const FileList({super.key, required this.fileList});
+  const FileList(
+      {super.key, required this.fileList, required this.socketService});
   final List<Map<String, dynamic>> fileList;
+  final SocketService? socketService;
 
   @override
   State<FileList> createState() => _FileListState();
@@ -10,34 +15,34 @@ class FileList extends StatefulWidget {
 
 class _FileListState extends State<FileList> with TickerProviderStateMixin {
   late List<Map<String, dynamic>> fileStructure;
+  late FileState fileProvider;
 
   @override
   void initState() {
     super.initState();
+    fileProvider = Provider.of<FileState>(context, listen: false);
     fileStructure = convertToNestedStructure(widget.fileList);
   }
 
   List<Map<String, dynamic>> convertToNestedStructure(
       List<Map<String, dynamic>> fileList) {
-    // Helper function to create nested folder structure recursively
     void addToNestedStructure(Map<String, dynamic> currentFolder,
-        List<String> pathParts, String name, String type) {
+        List<String> pathParts, String name, String type, String id) {
       if (pathParts.isEmpty) return;
 
       String currentPart = pathParts.removeAt(0);
 
-      bool isFile =
-          currentPart.contains('.'); // Check if it's a file by extension
+      bool isFile = currentPart.contains('.');
 
       if (pathParts.isEmpty && isFile) {
         (currentFolder['children'] ??= []).add({
           "name": currentPart,
           "fileType": "file",
+          "_id": id,
         });
         return;
       }
 
-      // Find or create folder in the current structure
       Map<String, dynamic> folder = currentFolder['children']?.firstWhere(
         (child) =>
             child['name'] == currentPart && child['fileType'] == "folder",
@@ -46,6 +51,7 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
             "name": currentPart,
             "fileType": "folder",
             "isExpanded": false,
+            "_id": id,
             "children": [],
           };
           (currentFolder['children'] ??= []).add(newFolder);
@@ -53,26 +59,26 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
         },
       );
 
-      addToNestedStructure(folder, pathParts, name, type);
+      addToNestedStructure(folder, pathParts, name, type, id);
     }
 
     List<Map<String, dynamic>> result = [];
 
-    // Traverse the file list and build the nested structure
     for (var file in fileList) {
-      List<String> pathParts =
-          file['path'].split('\\'); // Split using backslash
+      List<String> pathParts = file['path'].split('\\');
       String name = file['name'];
-      String type = file['fileType']; // Correct key for file type
+      String type = file['fileType'];
+      String id = file['_id'];
 
       if (pathParts.length == 1) {
         // Top-level file or folder
         if (type == "file" || name.contains('.')) {
-          result.add({"name": name, "fileType": "file"});
+          result.add({"name": name, "fileType": "file", "_id": id});
         } else {
           result.add({
             "name": name,
             "fileType": "folder",
+            "_id": id,
             "isExpanded": false,
             "children": []
           });
@@ -86,6 +92,7 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
             Map<String, dynamic> newFolder = {
               "name": rootFolder,
               "fileType": "folder",
+              "_id": id,
               "isExpanded": false,
               "children": [],
             };
@@ -93,15 +100,17 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
             return newFolder;
           },
         );
-
-        addToNestedStructure(folder, pathParts, name, type);
+        addToNestedStructure(folder, pathParts, name, type, id);
       }
     }
-
     return result;
   }
 
-  String? _selectedItem;
+  // dynamic selectedItem;
+  void handleSelection(Map<String, dynamic> selectedItem) {
+    // Update the selected item in FileState
+    fileProvider.updateSelectedItem(selectedItem);
+  }
 
   void toggleFolder(Map<String, dynamic> folder) {
     setState(() {
@@ -113,27 +122,25 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: items.map((item) {
-        bool isSelected = _selectedItem == item["name"];
-        bool isFolder = item["fileType"] == "folder"; // Use updated key
-
+        bool isSelected = Provider.of<FileState>(context).selectedItem?['name'] == item['name'];
+        bool isFolder = item["fileType"] == "folder";
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             GestureDetector(
               onTap: () {
-                setState(() {
-                  _selectedItem = item["name"];
-                  if (isFolder) {
-                    toggleFolder(item);
-                  }
-                });
+                handleSelection(item);
+                if (isFolder) {
+                  toggleFolder(item);
+                }
               },
               child: Container(
+                // constraints: BoxConstraints(minWidth: ),
                 margin: EdgeInsets.only(left: level * 25),
                 padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Colors.teal.withOpacity(0.7)
+                      ? Colors.teal.withAlpha((0.6 * 255).toInt())
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -187,9 +194,9 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      scrollDirection: Axis.horizontal, // Allow horizontal scrolling
+      scrollDirection: Axis.horizontal,
       child: SingleChildScrollView(
-        scrollDirection: Axis.vertical, // Allow vertical scrolling
+        scrollDirection: Axis.vertical,
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: buildFileTree(fileStructure),

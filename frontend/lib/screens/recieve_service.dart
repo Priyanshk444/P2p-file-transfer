@@ -16,7 +16,7 @@ class FileReceiver {
     if (!publicFolder.existsSync()) {
       publicFolder.createSync();
     }
-
+    
     // Connect to the sender WebSocket
     final uri = Uri.parse('ws://$senderIP:$senderPort');
     channel = IOWebSocketChannel.connect(uri);
