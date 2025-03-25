@@ -314,9 +314,9 @@ class _FormContentState extends State<FormContent> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    // if (!_formKey.currentState!.validate()) {
-                    //   return;
-                    // }
+                    if (!_formKey.currentState!.validate()) {
+                      return;
+                    }
                     // if (!socketService.isConnected()) {
                     //   socketService.connect();
                     // } else {
@@ -372,35 +372,6 @@ class _FormContentState extends State<FormContent> {
       }
     }
     return "Unable to determine IP address";
-  }
-
-  List<Map<String, String>> getFolderContents(String folderPath) {
-    List<Map<String, String>> results = [];
-
-    try {
-      Directory folder = Directory(folderPath);
-      List<FileSystemEntity> entities = folder.listSync();
-
-      for (var entity in entities) {
-        FileStat stats = entity.statSync();
-        String type =
-            stats.type == FileSystemEntityType.directory ? "folder" : "file";
-
-        results.add({
-          "name": entity.uri.pathSegments.last,
-          "path": entity.path,
-          "type": type,
-        });
-
-        if (type == "folder") {
-          results.addAll(getFolderContents(entity.path));
-        }
-      }
-    } catch (e) {
-      print("Error reading folder: $e");
-    }
-
-    return results;
   }
 
   Future<void> _selectFolder(TextEditingController controller) async {

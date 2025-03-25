@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:p2p/providers/files_provider.dart';
 import 'package:p2p/screens/socket_service.dart';
 import 'package:http/http.dart' as http;
+import 'package:p2p/widgets/downlad_widget.dart';
 import 'package:p2p/widgets/file_list.dart';
 import 'dart:convert';
 import 'package:p2p/widgets/message_bubble.dart';
@@ -26,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen>
   String selectedFile = "";
   dynamic selectedUser;
   List<Map<String, dynamic>> userFileList = [];
+  dynamic downloadingFile;
 
   @override
   void initState() {
@@ -52,7 +54,6 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final socketService = Provider.of<SocketService>(context);
-    // final SocketService socketService = SocketService();
     final size = MediaQuery.of(context).size;
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 54, 54, 54),
@@ -149,8 +150,11 @@ class _HomeScreenState extends State<HomeScreen>
                             Expanded(
                                 child: Text(
                                     Provider.of<FileState>(context)
-                                            .selectedItem['name'] ??
-                                        'No file or folder selected',
+                                                .selectedItem !=
+                                            null
+                                        ? Provider.of<FileState>(context)
+                                            .selectedItem['name']
+                                        : 'No file or folder selected',
                                     style: TextStyle(color: Colors.white))),
                             _button("Info", () {}),
                             SizedBox(width: 10),
@@ -159,12 +163,22 @@ class _HomeScreenState extends State<HomeScreen>
                                   Provider.of<FileState>(context, listen: false)
                                       .selectedItem;
                               if (selectedFile != null) {
-                                socketService.downloadFile(selectedFile['_id']);
+                                socketService.downloadFile(
+                                  selectedFile['_id'],
+                                  // onProgressUpdate: (progress) {
+                                  //   Provider.of<DownloadState>(context,
+                                  //           listen: false)
+                                  //       .updateProgress(progress);
+                                  // },
+                                );
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('No file selected!')),
                                 );
                               }
+                              setState(() {
+                                downloadingFile = selectedFile;
+                              });
                             }),
                           ],
                         ),
@@ -315,40 +329,13 @@ class _HomeScreenState extends State<HomeScreen>
                                     _infoContainer(
                                       'No user selected',
                                       height: size.height * 0.2,
-                                    ),
-                                    // if (selectedUser != null)
-                                    //   Container(
-                                    //     height: size.height * 0.26,
-                                    //     decoration: BoxDecoration(
-                                    //       color: Color.fromARGB(255, 45, 45, 45),
-                                    //       border: Border.all(
-                                    //         color: Color.fromARGB(255, 24, 24, 24),
-                                    //       ),
-                                    //     ),
-                                    //     child: Column(
-                                    //       children: [
-                                    //         Expanded(
-                                    //           child: ListView.builder(
-                                    //             padding: EdgeInsets.all(8),
-                                    //             itemCount: socketService.messages.length,
-                                    //             itemBuilder: (context, index) {
-                                    //               final message = socketService.messages[index];
-                                    //               bool isMe = message['sender'] == 'Mahil';
-                                    //               return Align(
-                                    //                 alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                                    //                 child: MessageBubble(
-                                    //                   username: 'Mahil',
-                                    //                   message: message['message']!,
-                                    //                   isMe: isMe,
-                                    //                   time: TimeOfDay.now(),
-                                    //                 ),
-                                    //               );
-                                    //             },
-                                    //           ),
-                                    //         ),
-                                    //       ],
-                                    //     ),
-                                    //   ),
+                                    )
+                                    // selectedUser == null
+                                    //     ? _infoContainer(
+                                    //         'No user selected',
+                                    //         height: size.height * 0.2,
+                                    //       )
+                                    // : directMessagesWidget(),
                                   ],
                                 ),
                               ),
@@ -439,7 +426,17 @@ class _HomeScreenState extends State<HomeScreen>
             SizedBox(height: 10),
             Text('Downloading :', style: TextStyle(color: Colors.white)),
             SizedBox(height: 5),
-            _infoContainer('', height: 115),
+            if (downloadingFile != null)
+              Container(
+                height: 115,
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 45, 45, 45),
+                  border: Border.all(color: Color.fromARGB(255, 24, 24, 24)),
+                ),
+                child: DownloadProgressWidget(),
+              ),
+            if (downloadingFile == null) _infoContainer('', height: 115)
           ],
         ),
       ),
@@ -508,6 +505,75 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  // Widget directMessagesWidget() {
+  //   final size = MediaQuery.of(context).size;
+
+  //   return Container(
+  //     height: size.height * 0.26,
+  //     decoration: BoxDecoration(
+  //       color: Color.fromARGB(255, 45, 45, 45),
+  //       border: Border.all(
+  //         color: Color.fromARGB(255, 24, 24, 24),
+  //       ),
+  //     ),
+  //     child: Column(
+  //       children: [
+  //         Expanded(
+  //           child: Builder(
+  //             builder: (context) {
+  //               // Check if socketService or selectedUser is null
+  //               if (socketService == null || selectedUser == null) {
+  //                 return Center(
+  //                   child: Text(
+  //                     'No user or service connected',
+  //                     style: TextStyle(color: Colors.white),
+  //                   ),
+  //                 );
+  //               }
+
+  //               // Safely access directMessage map
+  //               final messages =
+  //                   socketService.directMessage[selectedUser['username']];
+
+  //               // Check if messages list is null or empty
+  //               if (messages == null || messages.isEmpty) {
+  //                 return Center(
+  //                   child: Text(
+  //                     'No messages yet',
+  //                     style: TextStyle(color: Colors.white),
+  //                   ),
+  //                 );
+  //               }
+
+  //               // Display messages in ListView
+  //               return ListView.builder(
+  //                 padding: EdgeInsets.all(8),
+  //                 itemCount: messages.length,
+  //                 itemBuilder: (context, index) {
+  //                   final message = messages[index];
+  //                   bool isMe = message['sender'] == 'Mahil';
+
+  //                   return Align(
+  //                     alignment:
+  //                         isMe ? Alignment.centerRight : Alignment.centerLeft,
+  //                     child: MessageBubble(
+  //                       username: message['sender'] ?? '',
+  //                       message: message['message'] ?? '',
+  //                       isMe: isMe,
+  //                       time: TimeOfDay
+  //                           .now(), // Replace with actual message time if available
+  //                     ),
+  //                   );
+  //                 },
+  //               );
+  //             },
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
   Widget _infoContainer(String text, {double? height}) {
     return Container(
       height: height,
@@ -527,7 +593,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _getUsers() async {
-    final url = Uri.parse('http://192.168.66.111:9000/api/users/users');
+    final url = Uri.parse('http://192.168.50.179:9000/api/users/users');
     try {
       final response = await http.get(url);
 
@@ -545,7 +611,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _getUserFiles(String userId) async {
-    final url = Uri.parse('http://192.168.66.111:9000/api/users/files/$userId');
+    final url = Uri.parse('http://192.168.50.179:9000/api/users/files/$userId');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {

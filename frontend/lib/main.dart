@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:p2p/providers/download_pregress_provider.dart';
 import 'package:p2p/providers/files_provider.dart';
 import 'package:p2p/screens/info_screen.dart';
 import 'package:p2p/screens/socket_service.dart';
@@ -10,6 +11,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => SocketService()..connect()),
         ChangeNotifierProvider(create: (_) => FileState()),
+        ChangeNotifierProvider(create: (_) => DownloadState()),
       ],
       child: const MyApp(),
     ),
