@@ -1,26 +1,84 @@
+# P2P File Sharing and Chat Application
+
+This is a **CLI-based P2P file-sharing and chat application** built using **Java Sockets**. The app allows direct peer-to-peer communication for both **messaging** and **file transfers**, including folder transfers.
+
+## Features
+
+- **Peer-to-peer messaging**
+- **File transfer support** (single file and entire folders)
+- **On-demand connectivity** (connect as a listener or initiator)
+- **Multiple concurrent peer connections** (supports chat and file transfer in parallel)
+
+## Technologies Used
+
+- **Java Sockets** - Networking
+- **Multithreading** - Concurrent messaging & file transfer
+- **I/O Streams** - File transfer & real-time communication
+
 ## Getting Started
 
-This is a Peer to peer file transfer Application that uses P2P type of connection to transfer file or folder from one device to another. This app also supports the feature of sending and recieving real time message.
+### Prerequisites
 
-## Technology used
-we have used web socket class of Java to implement this.
+- **Java 11+** installed
+- Basic knowledge of Java
 
-## Upcoming feature
-- support multiple peer connection
-- ensure security
-- many more....
+### Clone the Repository
 
-## Folder Structure
+```bash
+git clone https://github.com/your-username/p2p-chat-app.git
+cd p2p-chat-app
+```
 
-The workspace contains two folders by default, where:
+### Running the Application
 
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
+1. **Compile the Java files**
 
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
+   ```bash
+   javac P2PChat/*.java
+   ```
 
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
+2. **Start the application**
 
-## Dependency Management
+   ```bash
+   java P2PChat.P2PChat
+   ```
 
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+3. **Choose Mode:**
+
+   - Press **1** to act as a **listener** (wait for connections)
+   - Press **2** to act as a **connector** (connect to a peer)
+
+## Usage
+
+### Messaging
+
+- Once connected, type messages and press `Enter` to send.
+- Messages will be received in real-time.
+
+### File Transfer
+
+- Enter the full path of the file/folder you want to send.
+- The receiver's shared folder will store received files.
+
+## File Structure
+
+```
+P2PChat/
+│── P2PChat.java         # Main class handling peer-to-peer connections
+│── MessageSender.java   # Handles sending messages
+│── MessageReceiver.java # Handles receiving messages
+│── FileSender.java      # Handles sending files & folders
+│── FileReceiver.java    # Handles receiving files & folders
+```
+
+## Security Considerations
+
+- Currently, **no encryption** is implemented.
+- Future enhancements may include **SSL encryption** for secure transmission.
+
+## Author
+
+Priyansh Kumar
+
+
+
