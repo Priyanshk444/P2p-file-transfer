@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:p2p/screens/home_screen.dart';
 import 'dart:io';
 
+import 'package:p2p/services/socket_service.dart';
+import 'package:provider/provider.dart';
+
 class InfoScreen extends StatelessWidget {
   const InfoScreen({super.key});
 
@@ -314,26 +317,37 @@ class _FormContentState extends State<FormContent> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    if (!_formKey.currentState!.validate()) {
-                      return;
-                    }
+                    // if (!_formKey.currentState!.validate()) {
+                    //   return;
+                    // }
+                    // context.read<SocketService>().initialize(_serverIP.text);
+                    SocketService socketService =
+                        Provider.of<SocketService>(context, listen: false);
+                    String localIPAdress = await getLocalIPAddress();
+                    // socketService.registerUser(_userName.text, _shareFolderPath.text, localIPAdress);
                     // if (!socketService.isConnected()) {
-                    //   socketService.connect();
+                    //   socketService.registerUser(
+                    //     _userName.text,
+                    //     _shareFolderPath.text,
+                    //     localIPAdress,
+                    //   );
                     // } else {
                     //   print("Socket already connected.");
                     // }
-
                     appWindow.size = const Size(1000, 800);
                     appWindow.minSize = const Size(1000, 800);
                     appWindow.alignment = Alignment.center;
-                    String localIPAdress = await getLocalIPAddress();
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (ctx) => HomeScreen(currentUser: {
-                        "username": _userName.text,
-                        "serverIP": localIPAdress,
-                        "shareFolderPath": _shareFolderPath.text,
-                        "receiveFolderPath": _receiveFolderPath.text,
-                      })),
+                      MaterialPageRoute(
+                        builder: (ctx) => HomeScreen(
+                          currentUser: {
+                            "username": _userName.text,
+                            "serverIP": localIPAdress,
+                            "shareFolderPath": _shareFolderPath.text,
+                            "receiveFolderPath": _receiveFolderPath.text,
+                          },
+                        ),
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:p2p/screens/recieve_service.dart';
-import 'package:p2p/screens/sender_service.dart';
+import 'package:p2p/services/recieve_service.dart';
+import 'package:p2p/services/sender_service.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter/material.dart';
 
@@ -13,9 +13,15 @@ class SocketService with ChangeNotifier {
   Map<String, List<Map<String, dynamic>>> directMessage = {};
   List<dynamic> users = [];
   final fileReceiver = FileReceiver(senderIP: "192.168.50.179");
-
+  String? serverIP;
   dynamic availablePort;
   SocketService._internal();
+
+  void initialize(String ip) {
+    serverIP = ip;  
+    connect();  
+  }
+
 
   void connect() {
     if (socket != null && socket!.connected) {
@@ -35,7 +41,6 @@ class SocketService with ChangeNotifier {
 
     socket!.onConnect((_) {
       print('Connected: ${socket!.id}');
-      
     });
 
     // Register listeners only once to avoid duplicates
@@ -151,9 +156,6 @@ class SocketService with ChangeNotifier {
     socket?.disconnect();
   }
 
-  factory SocketService() {
-    return _instance;
-  }
 
   List<Map<String, dynamic>> getFolderContents(String folderPath) {
     List<Map<String, dynamic>> results = [];
@@ -215,6 +217,10 @@ class SocketService with ChangeNotifier {
     }
 
     return totalSize;
+  }
+
+  factory SocketService() {
+    return _instance;
   }
 
   // List<Map<String, String>> getFolderContents(String folderPath) {

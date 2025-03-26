@@ -3,13 +3,13 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:p2p/providers/download_pregress_provider.dart';
 import 'package:p2p/providers/files_provider.dart';
 import 'package:p2p/screens/info_screen.dart';
-import 'package:p2p/screens/socket_service.dart';
+import 'package:p2p/services/socket_service.dart';
 import 'package:provider/provider.dart';
 void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => SocketService()..connect()),
+        ChangeNotifierProvider(create: (_) => SocketService()),
         ChangeNotifierProvider(create: (_) => FileState()),
         ChangeNotifierProvider(create: (_) => DownloadState()),
       ],

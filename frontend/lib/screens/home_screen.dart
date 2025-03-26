@@ -1,12 +1,13 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:p2p/providers/files_provider.dart';
-import 'package:p2p/screens/socket_service.dart';
+import 'package:p2p/services/socket_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:p2p/widgets/downlad_widget.dart';
 import 'package:p2p/widgets/file_list.dart';
 import 'dart:convert';
 import 'package:p2p/widgets/message_bubble.dart';
+import 'package:p2p/widgets/search_file_dialog.dart';
 import 'package:p2p/widgets/settings_widget.dart';
 import 'package:provider/provider.dart';
 
@@ -22,7 +23,6 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   late TabController _tabController;
-  SocketService socketService = SocketService();
   String selectedFolder = "";
   String selectedFile = "";
   dynamic selectedUser;
@@ -34,20 +34,16 @@ class _HomeScreenState extends State<HomeScreen>
     super.initState();
     // fetchMessages();
     _getUsers();
-    // _getUserFiles();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       setState(() {});
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<SocketService>(context, listen: false).connect();
     });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    socketService.disconnect();
+    Provider.of<SocketService>(context, listen: false).disconnect();
     super.dispose();
   }
 
@@ -73,7 +69,12 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 Spacer(),
-                _button("Global Search", () {}),
+                _button(
+                  "Global Search",
+                  () {
+                    showAnimatedSettingsDialog(context, SearchFileDialog());
+                  },
+                ),
                 SizedBox(width: 10),
                 _button("Import Files", () {
                   _pickFile();
@@ -86,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen>
                 _button(
                   "Settings",
                   () {
-                    showAnimatedSettingsDialog(context);
+                    showAnimatedSettingsDialog(context, SettingsDialog());
                   },
                 ),
               ],
@@ -599,9 +600,9 @@ class _HomeScreenState extends State<HomeScreen>
 
       if (response.statusCode == 200) {
         setState(() {
-          socketService.users = jsonDecode(response.body);
+          Provider.of<SocketService>(context).users = jsonDecode(response.body);
         });
-        print('Data: $socketService.users');
+        print('Data: ${Provider.of<SocketService>(context).users}');
       } else {
         print('Error: ${response.statusCode}');
       }
@@ -628,13 +629,13 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  void showAnimatedSettingsDialog(BuildContext context) {
+  void showAnimatedSettingsDialog(BuildContext context, Widget dialogWidget) {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
       barrierLabel: "Settings",
       pageBuilder: (context, animation, secondaryAnimation) {
-        return const SettingsDialog();
+        return dialogWidget;
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(

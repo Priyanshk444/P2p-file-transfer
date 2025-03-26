@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2p/providers/files_provider.dart';
-import 'package:p2p/screens/socket_service.dart';
+import 'package:p2p/services/socket_service.dart';
 import 'package:provider/provider.dart';
 
 class FileList extends StatefulWidget {
