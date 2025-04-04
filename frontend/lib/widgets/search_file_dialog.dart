@@ -1,7 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:p2p/services/socket_service.dart';
+import 'package:provider/provider.dart';
 
 class SearchFileDialog extends StatefulWidget {
-  const SearchFileDialog({super.key});
+  const SearchFileDialog({super.key, required this.serverIP});
+  final String serverIP;
 
   @override
   State<SearchFileDialog> createState() => _SearchFileDialogState();
@@ -9,89 +15,10 @@ class SearchFileDialog extends StatefulWidget {
 
 class _SearchFileDialogState extends State<SearchFileDialog> {
   final TextEditingController _searchController = TextEditingController();
-  String selectedFileName = "";
-  List<Map<String, dynamic>> allFiles = [
-    {
-      'name': 'JetBrainsMono-2.242.zip',
-      'type': 'file',
-      'owner': 'harsh',
-      'size': '3.91 MB'
-    },
-    {
-      'name': 'FlutterGuide.pdf',
-      'type': 'file',
-      'owner': 'john',
-      'size': '1.2 MB'
-    },
-    {
-      'name': 'NodeJS_Tutorial.docx',
-      'type': 'file',
-      'owner': 'mark',
-      'size': '3.5 MB'
-    },
-    {
-      'name': 'React_Code.zip',
-      'type': 'file',
-      'owner': 'alice',
-      'size': '5.0 MB'
-    },
-    {
-      'name': 'Database_Design.pptx',
-      'type': 'file',
-      'owner': 'harsh',
-      'size': '8.1 MB'
-    },
-    {
-      'name': 'DesignPatternsBook.epub',
-      'type': 'file',
-      'owner': 'mike',
-      'size': '2.4 MB'
-    },
-    {
-      'name': 'DockerEssentials.pdf',
-      'type': 'file',
-      'owner': 'harsh',
-      'size': '4.8 MB'
-    },
-    {
-      'name': 'Networking_Tools.zip',
-      'type': 'file',
-      'owner': 'anna',
-      'size': '6.2 MB'
-    },
-    {
-      'name': 'JetBrainsMono-2.242_1.zip',
-      'type': 'file',
-      'owner': 'harsh',
-      'size': '3.91 MB'
-    },
-    {
-      'name': 'System_Architecture.ppt',
-      'type': 'file',
-      'owner': 'emma',
-      'size': '7.4 MB'
-    },
-    {
-      'name': 'Guide_to_Linux.pdf',
-      'type': 'file',
-      'owner': 'chris',
-      'size': '3.0 MB'
-    },
-    {
-      'name': 'GraphQL_Tutorial.docx',
-      'type': 'file',
-      'owner': 'kate',
-      'size': '5.5 MB'
-    },
-    {
-      'name': 'Kotlin_Coding_Tips.zip',
-      'type': 'file',
-      'owner': 'max',
-      'size': '4.1 MB'
-    },
-  ];
+  dynamic selectedFile;
+  List<Map<String, dynamic>> allFiles = [];
 
-  List<Map<String, dynamic>> filteredFiles = []; // For filtered search results
+  List<Map<String, dynamic>> filteredFiles = [];
 
   @override
   void initState() {
@@ -99,18 +26,10 @@ class _SearchFileDialogState extends State<SearchFileDialog> {
     filteredFiles;
   }
 
-  void _filterFiles() {
-    String query = _searchController.text.toLowerCase();
-    setState(() {
-      filteredFiles = allFiles.where((file) {
-        return file['name'].toLowerCase().contains(query) ||
-            file['owner'].toLowerCase().contains(query);
-      }).toList();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final usersList = Provider.of<SocketService>(context, listen: false).users;
+
     return Dialog(
       backgroundColor: const Color.fromARGB(255, 54, 54, 54),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -194,7 +113,9 @@ class _SearchFileDialogState extends State<SearchFileDialog> {
                         ),
                       ),
                       const SizedBox(width: 5),
-                      _button('Search', _filterFiles),
+                      _button('Search', () {
+                        searchFiles(_searchController.text);
+                      }),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -221,7 +142,7 @@ class _SearchFileDialogState extends State<SearchFileDialog> {
                             columns: const [
                               DataColumn(
                                 label: SizedBox(
-                                  width: 300,
+                                  width: 250,
                                   child: Text('Item',
                                       textAlign: TextAlign.center,
                                       overflow: TextOverflow.ellipsis,
@@ -230,7 +151,7 @@ class _SearchFileDialogState extends State<SearchFileDialog> {
                               ),
                               DataColumn(
                                 label: SizedBox(
-                                  width: 50,
+                                  width: 60,
                                   child: Text('Type',
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(color: Colors.white)),
@@ -238,7 +159,7 @@ class _SearchFileDialogState extends State<SearchFileDialog> {
                               ),
                               DataColumn(
                                 label: SizedBox(
-                                  width: 50,
+                                  width: 70,
                                   child: Text('Owner',
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(color: Colors.white)),
@@ -246,7 +167,7 @@ class _SearchFileDialogState extends State<SearchFileDialog> {
                               ),
                               DataColumn(
                                 label: SizedBox(
-                                  width: 60,
+                                  width: 70,
                                   child: Text('Size',
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(color: Colors.white)),
@@ -254,8 +175,10 @@ class _SearchFileDialogState extends State<SearchFileDialog> {
                               ),
                             ],
                             rows: filteredFiles.map((file) {
-                              final isSelected =
-                                  selectedFileName == file['name'];
+                              bool isSelected = false;
+                              if (selectedFile != null) {
+                                isSelected = selectedFile['_id'] == file['_id'];
+                              }
                               return DataRow(
                                 selected: isSelected,
                                 color: WidgetStateProperty.resolveWith<Color?>(
@@ -269,29 +192,37 @@ class _SearchFileDialogState extends State<SearchFileDialog> {
                                 ),
                                 onSelectChanged: (data) {
                                   setState(() {
-                                    selectedFileName = file['name'];
+                                    selectedFile = file;
                                   });
                                 },
                                 cells: [
                                   DataCell(
                                     Text(
                                       file['name'],
-                                      style: const TextStyle(
-                                          color: Colors.white),
+                                      style:
+                                          const TextStyle(color: Colors.white),
                                     ),
                                   ),
                                   DataCell(
-                                    Text(file['type'],
+                                    Text(file['fileType'],
                                         style: const TextStyle(
                                             color: Colors.white)),
                                   ),
                                   DataCell(
-                                    Text(file['owner'],
-                                        style: const TextStyle(
-                                            color: Colors.white)),
+                                    Text(
+                                      usersList.firstWhere(
+                                        (user) => user["id"] == file['owner'],
+                                        orElse: () => {
+                                          "name": "Unknown"
+                                        }, 
+                                      )["name"],
+                                      style:
+                                          const TextStyle(color: Colors.white),
+                                    ),
                                   ),
                                   DataCell(
-                                    Text(file['size'],
+                                    Text(
+                                        '${(double.parse((file['size'] / (1024*1024)).toStringAsFixed(2))).toString()} MB',
                                         style: const TextStyle(
                                             color: Colors.white)),
                                   ),
@@ -307,7 +238,20 @@ class _SearchFileDialogState extends State<SearchFileDialog> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      _button('Download', () {}),
+                      _button('Download', () {
+                        if (selectedFile != null) {
+                          Provider.of<SocketService>(context, listen: false)
+                              .downloadFile(
+                            selectedFile['_id'],
+                            context,
+                            selectedFile['ip'],
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('No file selected!')),
+                          );
+                        }
+                      }),
                     ],
                   ),
                 ],
@@ -317,6 +261,27 @@ class _SearchFileDialogState extends State<SearchFileDialog> {
         ),
       ),
     );
+  }
+
+  
+  void searchFiles(String searchQuery) async {
+    // change hardcoded value
+    final String url = 
+        'http://${widget.serverIP}:9000/api/users/searchFiles/$searchQuery';
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as List;
+        setState(() {
+          filteredFiles = data.map((e) => e as Map<String, dynamic>).toList();
+        });
+      } else {
+        throw Exception('Failed to load messages');
+      }
+    } catch (e) {
+      print('Error fetching messages: $e');
+    }
   }
 
   Widget _button(String title, VoidCallback? onTap) {

@@ -12,8 +12,10 @@ import 'package:p2p/widgets/settings_widget.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.currentUser});
+  const HomeScreen(
+      {super.key, required this.currentUser, required this.serverIP});
   final Map<String, dynamic> currentUser;
+  final String serverIP;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -27,12 +29,13 @@ class _HomeScreenState extends State<HomeScreen>
   String selectedFile = "";
   dynamic selectedUser;
   List<Map<String, dynamic>> userFileList = [];
+  dynamic selectedUserFile;
   dynamic downloadingFile;
 
   @override
   void initState() {
     super.initState();
-    // fetchMessages();
+    // _fetchMessages();
     _getUsers();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
@@ -72,7 +75,12 @@ class _HomeScreenState extends State<HomeScreen>
                 _button(
                   "Global Search",
                   () {
-                    showAnimatedSettingsDialog(context, SearchFileDialog());
+                    showAnimatedSettingsDialog(
+                      context,
+                      SearchFileDialog(
+                        serverIP: widget.serverIP,
+                      ),
+                    );
                   },
                 ),
                 SizedBox(width: 10),
@@ -160,17 +168,17 @@ class _HomeScreenState extends State<HomeScreen>
                             _button("Info", () {}),
                             SizedBox(width: 10),
                             _button("Download", () async {
-                              final selectedFile =
+                              final selectedUserFile =
                                   Provider.of<FileState>(context, listen: false)
                                       .selectedItem;
-                              if (selectedFile != null) {
-                                socketService.downloadFile(
-                                  selectedFile['_id'],
-                                  // onProgressUpdate: (progress) {
-                                  //   Provider.of<DownloadState>(context,
-                                  //           listen: false)
-                                  //       .updateProgress(progress);
-                                  // },
+                              if (selectedUserFile != null) {
+                                print(selectedUserFile);
+                                Provider.of<SocketService>(context,
+                                        listen: false)
+                                    .downloadFile(
+                                  selectedUserFile['_id'],
+                                  context,
+                                  selectedUserFile['ip'],
                                 );
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -178,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 );
                               }
                               setState(() {
-                                downloadingFile = selectedFile;
+                                downloadingFile = selectedUserFile;
                               });
                             }),
                           ],
@@ -242,8 +250,7 @@ class _HomeScreenState extends State<HomeScreen>
                                               ),
                                               SizedBox(width: 8),
                                               Text(
-                                                user[
-                                                    'username'], // Accessing the 'name' field from JSON
+                                                user['username'], 
                                                 style: TextStyle(
                                                   color: Colors.white,
                                                   fontSize: 14,
@@ -258,90 +265,79 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         ),
                         SizedBox(height: 10),
-                        DefaultTabController(
-                          length: 2,
-                          child: Column(
-                            children: [
-                              Container(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.05,
-                                decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 45, 45, 45),
-                                  border: Border.all(
-                                      color: Color.fromARGB(255, 24, 24, 24)),
-                                ),
-                                child: TabBar(
-                                  controller: _tabController,
-                                  labelColor: Colors.white,
-                                  unselectedLabelColor:
-                                      Color.fromARGB(255, 159, 159, 159),
-                                  indicatorColor: Colors.teal,
-                                  tabs: [
-                                    Tab(text: "Group Chat"),
-                                    Tab(text: "Private Chat"),
-                                  ],
-                                ),
+                        Column(
+                          children: [
+                            Container(
+                              height:
+                                  MediaQuery.of(context).size.height * 0.05,
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 45, 45, 45),
+                                border: Border.all(
+                                    color: Color.fromARGB(255, 24, 24, 24)),
                               ),
-                              const SizedBox(height: 10),
-                              Container(
-                                decoration: BoxDecoration(),
-                                height: size.height * 0.26,
-                                child: TabBarView(
-                                  children: [
-                                    Container(
-                                      height: size.height * 0.26,
-                                      decoration: BoxDecoration(
-                                        color: Color.fromARGB(255, 45, 45, 45),
-                                        border: Border.all(
-                                          color:
-                                              Color.fromARGB(255, 24, 24, 24),
-                                        ),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Expanded(
-                                            child: ListView.builder(
-                                              padding: EdgeInsets.all(8),
-                                              itemCount: socketService
-                                                  .groupMessage.length,
-                                              itemBuilder: (context, index) {
-                                                final message = socketService
-                                                    .groupMessage[index];
-                                                bool isMe = message['sender'] ==
-                                                    'Mahil';
-                                                return Align(
-                                                  alignment: isMe
-                                                      ? Alignment.centerRight
-                                                      : Alignment.centerLeft,
-                                                  child: MessageBubble(
-                                                    username: 'Mahil',
-                                                    message:
-                                                        message['message']!,
-                                                    isMe: isMe,
-                                                    time: TimeOfDay.now(),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                        ],
+                              child: TabBar(
+                                controller: _tabController,
+                                labelColor: Colors.white,
+                                unselectedLabelColor:
+                                    Color.fromARGB(255, 159, 159, 159),
+                                indicatorColor: Colors.teal,
+                                tabs: [
+                                  Tab(text: "Group Chat"),
+                                  Tab(text: "Private Chat"),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              decoration: BoxDecoration(),
+                              height: size.height * 0.26,
+                              child: TabBarView(
+                                controller: _tabController,
+                                children: [
+                                  Container(
+                                    height: size.height * 0.26,
+                                    decoration: BoxDecoration(
+                                      color: Color.fromARGB(255, 45, 45, 45),
+                                      border: Border.all(
+                                        color:
+                                            Color.fromARGB(255, 24, 24, 24),
                                       ),
                                     ),
-                                    _infoContainer(
-                                      'No user selected',
-                                      height: size.height * 0.2,
-                                    )
-                                    // selectedUser == null
-                                    //     ? _infoContainer(
-                                    //         'No user selected',
-                                    //         height: size.height * 0.2,
-                                    //       )
-                                    // : directMessagesWidget(),
-                                  ],
-                                ),
+                                    child: Column(
+                                      children: [
+                                        Expanded(
+                                          child: ListView.builder(
+                                            padding: EdgeInsets.all(8),
+                                            itemCount: socketService
+                                                .groupMessage.length,
+                                            itemBuilder: (context, index) {
+                                              final message = socketService
+                                                  .groupMessage[index];
+                                              bool isMe = message['sender'] ==
+                                                  widget.currentUser[
+                                                      'username'];
+                                              return Align(
+                                                alignment: isMe
+                                                    ? Alignment.centerRight
+                                                    : Alignment.centerLeft,
+                                                child: MessageBubble(
+                                                  username: message['sender'],
+                                                  message:
+                                                      message['message']!,
+                                                  isMe: isMe,
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  directMessagesWidget(selectedUser, socketService),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                         SizedBox(height: 10),
                         Row(
@@ -386,29 +382,41 @@ class _HomeScreenState extends State<HomeScreen>
                                   "Send Message",
                                   () {
                                     if (_messageController.text
-                                        .trim()
-                                        .isEmpty) {
+                                            .trim()
+                                            .isEmpty ||
+                                        (_tabController.index == 1 &&
+                                            selectedUser == null)) {
                                       return;
                                     }
                                     if (_tabController.index == 0) {
-                                      socketService.sendGroupMessage(
+                                      Provider.of<SocketService>(context,
+                                              listen: false)
+                                          .sendGroupMessage(
                                         _messageController.text.trim(),
                                       );
                                       setState(() {
-                                        socketService.groupMessage.add({
-                                          'sender': 'Mahil',
+                                        Provider.of<SocketService>(context,
+                                                listen: false)
+                                            .groupMessage
+                                            .add({
+                                          'sender':
+                                              widget.currentUser['username'],
                                           'message':
                                               _messageController.text.trim(),
                                           'isMe': true,
-                                          'time': TimeOfDay.now(),
                                         });
                                       });
+                                      _messageController.clear();
                                     } else {
-                                      socketService.sendDirectMessage(
+                                      Provider.of<SocketService>(context,
+                                              listen: false)
+                                          .sendAndAddDirectMessage(
                                         _messageController.text.trim(),
+                                        widget.currentUser['username'],
+                                        selectedUser['username'],
                                       );
+                                      _messageController.clear();
                                     }
-                                    _messageController.clear();
                                   },
                                 ),
                                 SizedBox(height: 10),
@@ -435,7 +443,7 @@ class _HomeScreenState extends State<HomeScreen>
                   color: const Color.fromARGB(255, 45, 45, 45),
                   border: Border.all(color: Color.fromARGB(255, 24, 24, 24)),
                 ),
-                child: DownloadProgressWidget(),
+                child: DownloadProgressList(),
               ),
             if (downloadingFile == null) _infoContainer('', height: 115)
           ],
@@ -444,24 +452,26 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // Function to fetch messages
-  // Future<void> _fetchMessages() async {
-  //   const String url = 'http://192.168.66.59:9000/api/users/groupMessages/';
+  Future<void> _fetchMessages() async {
+    final String url =
+        'http://${widget.serverIP}:9000/api/users/groupMessages/';
 
-  //   try {
-  //     final response = await http.get(Uri.parse(url));
+    try {
+      final response = await http.get(Uri.parse(url));
 
-  //     if (response.statusCode == 200) {
-  //       setState(() {
-  //         messages = json.decode(response.body);
-  //       });
-  //     } else {
-  //       throw Exception('Failed to load messages');
-  //     }
-  //   } catch (e) {
-  //     print('Error fetching messages: $e');
-  //   }
-  // }
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as List;
+        setState(() {
+          Provider.of<SocketService>(context, listen: false).groupMessage =
+              data.map((e) => e as Map<String, dynamic>).toList();
+        });
+      } else {
+        throw Exception('Failed to load messages');
+      }
+    } catch (e) {
+      print('Error fetching messages: $e');
+    }
+  }
 
   Future<void> _selectFolder() async {
     String? result = await FilePicker.platform.getDirectoryPath();
@@ -506,74 +516,62 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // Widget directMessagesWidget() {
-  //   final size = MediaQuery.of(context).size;
+  Widget directMessagesWidget(
+      dynamic selectedUser, SocketService socketService) {
+    final size = MediaQuery.of(context).size;
 
-  //   return Container(
-  //     height: size.height * 0.26,
-  //     decoration: BoxDecoration(
-  //       color: Color.fromARGB(255, 45, 45, 45),
-  //       border: Border.all(
-  //         color: Color.fromARGB(255, 24, 24, 24),
-  //       ),
-  //     ),
-  //     child: Column(
-  //       children: [
-  //         Expanded(
-  //           child: Builder(
-  //             builder: (context) {
-  //               // Check if socketService or selectedUser is null
-  //               if (socketService == null || selectedUser == null) {
-  //                 return Center(
-  //                   child: Text(
-  //                     'No user or service connected',
-  //                     style: TextStyle(color: Colors.white),
-  //                   ),
-  //                 );
-  //               }
+    return Container(
+      height: size.height * 0.26,
+      decoration: BoxDecoration(
+        color: Color.fromARGB(255, 45, 45, 45),
+        border: Border.all(
+          color: Color.fromARGB(255, 24, 24, 24),
+        ),
+      ),
+      child: Builder(
+        builder: (context) {
+          if (selectedUser == null) {
+            return Center(
+              child: Text(
+                'No user selected',
+                style: TextStyle(color: Colors.white),
+              ),
+            );
+          }
 
-  //               // Safely access directMessage map
-  //               final messages =
-  //                   socketService.directMessage[selectedUser['username']];
+          final messages =
+              socketService.directMessage[selectedUser['username']];
 
-  //               // Check if messages list is null or empty
-  //               if (messages == null || messages.isEmpty) {
-  //                 return Center(
-  //                   child: Text(
-  //                     'No messages yet',
-  //                     style: TextStyle(color: Colors.white),
-  //                   ),
-  //                 );
-  //               }
+          if (messages == null || messages.isEmpty) {
+            return Center(
+              child: Text(
+                'No messages yet',
+                style: TextStyle(color: Colors.white),
+              ),
+            );
+          }
 
-  //               // Display messages in ListView
-  //               return ListView.builder(
-  //                 padding: EdgeInsets.all(8),
-  //                 itemCount: messages.length,
-  //                 itemBuilder: (context, index) {
-  //                   final message = messages[index];
-  //                   bool isMe = message['sender'] == 'Mahil';
+          return ListView.builder(
+            padding: EdgeInsets.all(8),
+            itemCount: messages.length,
+            itemBuilder: (context, index) {
+              final message = messages[index];
+              bool isMe = message['sender'] == selectedUser['username'];
 
-  //                   return Align(
-  //                     alignment:
-  //                         isMe ? Alignment.centerRight : Alignment.centerLeft,
-  //                     child: MessageBubble(
-  //                       username: message['sender'] ?? '',
-  //                       message: message['message'] ?? '',
-  //                       isMe: isMe,
-  //                       time: TimeOfDay
-  //                           .now(), // Replace with actual message time if available
-  //                     ),
-  //                   );
-  //                 },
-  //               );
-  //             },
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+              return Align(
+                alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                child: MessageBubble(
+                  username: message['sender'] ?? '',
+                  message: message['message'] ?? '',
+                  isMe: isMe,
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
 
   Widget _infoContainer(String text, {double? height}) {
     return Container(
@@ -594,15 +592,17 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _getUsers() async {
-    final url = Uri.parse('http://192.168.50.179:9000/api/users/users');
+    final url = Uri.parse('http://${widget.serverIP}:9000/api/users/users');
     try {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         setState(() {
-          Provider.of<SocketService>(context).users = jsonDecode(response.body);
+          Provider.of<SocketService>(context, listen: false).users =
+              jsonDecode(response.body);
         });
-        print('Data: ${Provider.of<SocketService>(context).users}');
+        print(
+            'Data: ${Provider.of<SocketService>(context, listen: false).users}');
       } else {
         print('Error: ${response.statusCode}');
       }
@@ -612,7 +612,8 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _getUserFiles(String userId) async {
-    final url = Uri.parse('http://192.168.50.179:9000/api/users/files/$userId');
+    final url =
+        Uri.parse('http://${widget.serverIP}:9000/api/users/files/$userId');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {

@@ -1,17 +1,43 @@
 import 'package:flutter/material.dart';
 
-class DownloadState extends ChangeNotifier {
-  double _progress = 0.0; // Tracks the progress (0.0 to 100.0)
+class FileDownload {
+  String fileName;
+  double progress;
+  int downloadedBytes;
+  int totalBytes;
+  bool isCompleted;
 
-  double get progress => _progress;
+  FileDownload({
+    required this.fileName,
+    this.progress = 0.0,
+    this.downloadedBytes = 0,
+    required this.totalBytes,
+    this.isCompleted = false,
+  });
+}
 
-  void updateProgress(double newProgress) {
-    _progress = newProgress;
+class DownloadProvider extends ChangeNotifier {
+  final List<FileDownload> _downloads = [];
+
+  List<FileDownload> get downloads => _downloads;
+
+  void addDownload(String fileName, int totalBytes) {
+    _downloads.add(FileDownload(fileName: fileName, totalBytes: totalBytes));
     notifyListeners();
   }
 
-  void resetProgress() {
-    _progress = 0.0;
+  void updateProgress(String fileName, int downloadedBytes) {
+    final file = _downloads.firstWhere((f) => f.fileName == fileName);
+    file.downloadedBytes = downloadedBytes;
+    file.progress = downloadedBytes / file.totalBytes;
+    if (downloadedBytes >= file.totalBytes) {
+      file.isCompleted = true;
+    }
+    notifyListeners();
+  }
+
+  void removeCompletedFiles() {
+    _downloads.removeWhere((file) => file.isCompleted);
     notifyListeners();
   }
 }

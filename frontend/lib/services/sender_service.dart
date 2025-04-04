@@ -5,8 +5,8 @@ class FileSender {
   final String filePath;
   final String senderIP;
   final int availablePort;
-
-  FileSender({required this.filePath, required this.senderIP, required this.availablePort});
+  final int size;
+  FileSender({required this.filePath, required this.senderIP, required this.availablePort , required this.size});
 
   Future<void> startSendingFile() async {
     final file = File(filePath);
@@ -23,10 +23,8 @@ class FileSender {
     server.transform(WebSocketTransformer()).listen((WebSocket ws) async {
       print("Receiver connected.");
       
-      // Send file metadata first
-      ws.add(jsonEncode({"type": "startFile", "fileName": fileName}));
+      ws.add(jsonEncode({"type": "startFile", "fileName": fileName , "size": size}));
 
-      // Send file in chunks (64 KB chunks)
       final stream = file.openRead();
       await for (final chunk in stream) {
         if (ws.readyState == WebSocket.open) {
@@ -38,11 +36,9 @@ class FileSender {
         }
       }
 
-      // Send end of file message
       ws.add(jsonEncode({"type": "endOfFile"}));
       print("File transfer complete.");
 
-      // Close WebSocket and stop listening to new connections
       await ws.close();
       await server.close(force: true);
       print("WebSocket server closed, releasing port.");

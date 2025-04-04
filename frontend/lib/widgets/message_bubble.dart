@@ -6,13 +6,11 @@ class MessageBubble extends StatelessWidget {
     required this.username,
     required this.message,
     required this.isMe,
-    required this.time,
   });
 
   final String username;
   final String message;
   final bool isMe;
-  final TimeOfDay time;
 
   @override
   Widget build(BuildContext context) {
@@ -69,14 +67,6 @@ class MessageBubble extends StatelessWidget {
           style: const TextStyle(
               fontSize: 13, color: Color.fromARGB(255, 220, 220, 220)),
           softWrap: true,
-        ),
-        const SizedBox(height: 4),
-        Align(
-          alignment: Alignment.bottomLeft, // Align time to bottom left
-          child: Text(
-            time.format(context),
-            style: const TextStyle(fontSize: 10, color: Colors.white70),
-          ),
         ),
       ],
     );

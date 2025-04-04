@@ -317,32 +317,30 @@ class _FormContentState extends State<FormContent> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    // if (!_formKey.currentState!.validate()) {
-                    //   return;
-                    // }
-                    // context.read<SocketService>().initialize(_serverIP.text);
+                    if (!_formKey.currentState!.validate()) {
+                      return;
+                    }
+                    String localIPAdress = await getLocalIPAddress();
+                    context.read<SocketService>().initialize(_serverIP.text, localIPAdress, _receiveFolderPath.text, _userName.text);
                     SocketService socketService =
                         Provider.of<SocketService>(context, listen: false);
-                    String localIPAdress = await getLocalIPAddress();
-                    // socketService.registerUser(_userName.text, _shareFolderPath.text, localIPAdress);
-                    // if (!socketService.isConnected()) {
-                    //   socketService.registerUser(
-                    //     _userName.text,
-                    //     _shareFolderPath.text,
-                    //     localIPAdress,
-                    //   );
-                    // } else {
-                    //   print("Socket already connected.");
-                    // }
+
+                    socketService.registerUser(
+                      _userName.text,
+                      _shareFolderPath.text,
+                      localIPAdress,
+                    );
+
                     appWindow.size = const Size(1000, 800);
                     appWindow.minSize = const Size(1000, 800);
                     appWindow.alignment = Alignment.center;
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (ctx) => HomeScreen(
+                          serverIP: _serverIP.text,
                           currentUser: {
                             "username": _userName.text,
-                            "serverIP": localIPAdress,
+                            "ip": localIPAdress,
                             "shareFolderPath": _shareFolderPath.text,
                             "receiveFolderPath": _receiveFolderPath.text,
                           },

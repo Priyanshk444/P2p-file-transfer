@@ -11,7 +11,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => SocketService()),
         ChangeNotifierProvider(create: (_) => FileState()),
-        ChangeNotifierProvider(create: (_) => DownloadState()),
+        ChangeNotifierProvider(create: (_) => DownloadProvider()),
       ],
       child: const MyApp(),
     ),

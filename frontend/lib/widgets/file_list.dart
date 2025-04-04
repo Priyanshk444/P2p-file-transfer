@@ -27,7 +27,7 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
   List<Map<String, dynamic>> convertToNestedStructure(
       List<Map<String, dynamic>> fileList) {
     void addToNestedStructure(Map<String, dynamic> currentFolder,
-        List<String> pathParts, String name, String type, String id) {
+        List<String> pathParts, String name, String type, String id, String ip, double? size) {
       if (pathParts.isEmpty) return;
 
       String currentPart = pathParts.removeAt(0);
@@ -39,6 +39,8 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
           "name": currentPart,
           "fileType": "file",
           "_id": id,
+          "ip" : ip,
+          "size" : size ?? 0, // change
         });
         return;
       }
@@ -52,6 +54,7 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
             "fileType": "folder",
             "isExpanded": false,
             "_id": id,
+            "size" : size ?? 0, // change
             "children": [],
           };
           (currentFolder['children'] ??= []).add(newFolder);
@@ -59,7 +62,7 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
         },
       );
 
-      addToNestedStructure(folder, pathParts, name, type, id);
+      addToNestedStructure(folder, pathParts, name, type, id,ip, size);
     }
 
     List<Map<String, dynamic>> result = [];
@@ -69,7 +72,8 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
       String name = file['name'];
       String type = file['fileType'];
       String id = file['_id'];
-
+      String ip = file['ip'];
+      double? size = file['size']; // change
       if (pathParts.length == 1) {
         // Top-level file or folder
         if (type == "file" || name.contains('.')) {
@@ -80,6 +84,7 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
             "fileType": "folder",
             "_id": id,
             "isExpanded": false,
+            "size" : size ?? 0, // change
             "children": []
           });
         }
@@ -93,6 +98,8 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
               "name": rootFolder,
               "fileType": "folder",
               "_id": id,
+              "ip" : ip,
+              "size" : size ?? 0, // change
               "isExpanded": false,
               "children": [],
             };
@@ -100,7 +107,7 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
             return newFolder;
           },
         );
-        addToNestedStructure(folder, pathParts, name, type, id);
+        addToNestedStructure(folder, pathParts, name, type, id, ip, size);
       }
     }
     return result;

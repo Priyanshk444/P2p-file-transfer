@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:p2p/services/recieve_service.dart';
 import 'package:p2p/services/sender_service.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -12,16 +11,21 @@ class SocketService with ChangeNotifier {
   List<Map<String, dynamic>> groupMessage = [];
   Map<String, List<Map<String, dynamic>>> directMessage = {};
   List<dynamic> users = [];
-  final fileReceiver = FileReceiver(senderIP: "192.168.50.179");
   String? serverIP;
   dynamic availablePort;
+  String? localIPAdress;
+  String? username;
+  String? receiveFolderPath;
   SocketService._internal();
 
-  void initialize(String ip) {
-    serverIP = ip;  
-    connect();  
+  void initialize(String ip, String localIPAdress, String receiveFolderPath,
+      String username) {
+    serverIP = ip;
+    this.localIPAdress = localIPAdress;
+    this.receiveFolderPath = receiveFolderPath;
+    this.username = username;
+    connect();
   }
-
 
   void connect() {
     if (socket != null && socket!.connected) {
@@ -29,9 +33,9 @@ class SocketService with ChangeNotifier {
       print('Socket already connected: ${socket!.id}');
       return;
     }
-
+    print("Server IP is $serverIP ");
     socket ??= IO.io(
-      'http://192.168.50.179:9000',
+      'http://$serverIP:9000',
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .enableAutoConnect()
@@ -43,8 +47,7 @@ class SocketService with ChangeNotifier {
       print('Connected: ${socket!.id}');
     });
 
-    // Register listeners only once to avoid duplicates
-    socket!.off('message');
+    // socket!.off('message');
     socket!.on('gmessage', (data) {
       print('Received gmessage: $data');
       groupMessage.add(data);
@@ -53,25 +56,38 @@ class SocketService with ChangeNotifier {
 
     socket!.on('dmessage', (data) {
       print('Received dmessage: $data');
-      groupMessage.add(data);
+      if (directMessage.containsKey(data['user'])) {
+        directMessage[data['user']]!.add(data['msg']);
+      } else {
+        directMessage[data['user']] = [data['msg']];
+      }
       notifyListeners();
     });
 
     socket!.on('user_joined', (data) {
       print('User joined: $data');
       users.add(data['newUser']);
-      // add user to list
       notifyListeners();
     });
+
     socket!.on('free-port', (data) {
       availablePort = data['availablePort'];
     });
+
+    socket!.on('userDisconnect', (data) {
+      print('called');
+      users.removeWhere((user) => user['_id'] == data['user']);
+      notifyListeners();
+    });
+
     socket!.on("fileRequest", (data) async {
       final freePort = await getFreePort();
       final fileSender = FileSender(
-          availablePort: freePort,
-          filePath: data['file'],
-          senderIP: '192.168.137.10');
+        availablePort: freePort,
+        filePath: data['file'],
+        senderIP: localIPAdress!,
+        size: data['size']
+      );
       socket!.emit("portInfo",
           {"availablePort": freePort, "userSocketId": data['userSocketId']});
       fileSender.startSendingFile();
@@ -83,79 +99,75 @@ class SocketService with ChangeNotifier {
 
   void registerUser(String username, String shareFolderPath, String serverIP) {
     socket!.emit('register', {
-        'username': username,
-        'fileList': getFolderContents(shareFolderPath),
-        'ip': serverIP,
-      });
+      'username': username,
+      'fileList': getFolderContents(shareFolderPath),
+      'ip': serverIP,
+    });
   }
-  
+
   void sendGroupMessage(String msg) {
     if (socket != null && socket!.connected) {
-      socket!.emit('groupMessage', {'msg': msg, 'user': 'Aksh'});
+      socket!.emit('groupMessage', {'msg': msg, 'user': username});
     }
   }
 
-  void sendDirectMessage(String msg) {
+  void sendAndAddDirectMessage(String msg, String sender, String reciever) {
     if (socket != null && socket!.connected) {
-      socket!.emit('directMessage', {'msg': msg, 'user': 'Aksh'});
+      socket!.emit('directMessage', {'msg': msg, 'user': sender});
     }
+    directMessage[reciever] ??= [];  
+    directMessage[reciever]!.add({
+      'sender': sender,
+      'message': msg,
+      'isMe': true,
+    });
+    notifyListeners();
   }
 
   Future<int> getFreePort() async {
     final socket = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
-    final port = socket.port; // Get the dynamically assigned free port
-    await socket.close(); // Close the socket to free up the port
+    final port = socket.port;
+    await socket.close();
     return port;
   }
 
-  void downloadFile(String fileId) async {
+  void downloadFile(
+      String fileId, BuildContext context, String senderIP) async {
+    print(receiveFolderPath);
     if (socket != null && socket!.connected) {
       socket!.emit('requestFile', {'fileId': fileId});
 
       if (availablePort == null) {
         print("Waiting for available port...");
+
         Timer.periodic(Duration(milliseconds: 100), (timer) async {
           if (availablePort != null) {
+            final fileReceiver = FileReceiver(
+                senderIP: senderIP,
+                senderPort: availablePort,
+                receiveFolderPath: receiveFolderPath!);
             print("Port found: $availablePort. Starting file download.");
             timer.cancel();
-            // Start receiving the file
-            await fileReceiver.startReceiving(availablePort);
+            fileReceiver.start(context);
             availablePort = null;
           } else {
             print("Port not found yet. Retrying...");
           }
         });
       } else {
-        // Start receiving if port is already set (unlikely but handled)
-        await fileReceiver.startReceiving(availablePort);
+        final fileReceiver = FileReceiver(
+            senderIP: senderIP,
+            senderPort: availablePort,
+            receiveFolderPath: receiveFolderPath!);
+        fileReceiver.start(context);
         availablePort = null;
       }
     }
   }
 
-  // void downloadFile(String fileId,
-  //     {required Function(double) onProgressUpdate}) async {
-  //   // File download logic here (socket communication)
-  //   int bytesReceived = 0;
-  //   int totalFileSize = 1000000; // Example file size (adjust as needed)
-
-  //   // Simulate receiving chunks of data with progress updates
-  //   while (bytesReceived < totalFileSize) {
-  //     // Download logic receiving chunks here
-  //     await Future.delayed(
-  //         Duration(milliseconds: 100)); // Simulate chunk download
-  //     bytesReceived += 5000; // Increment received bytes
-
-  //     // Calculate download progress
-  //     double progress = (bytesReceived / totalFileSize) * 100;
-  //     onProgressUpdate(progress); // Callback to update UI
-  //   }
-  // }
-
   void disconnect() {
     socket?.disconnect();
   }
-
 
   List<Map<String, dynamic>> getFolderContents(String folderPath) {
     List<Map<String, dynamic>> results = [];
@@ -171,21 +183,19 @@ class SocketService with ChangeNotifier {
 
         int size = 0;
         if (type == "file") {
-          size = stats.size; // File size in bytes
+          size = stats.size;
         } else if (type == "folder") {
-          // Calculate folder size by recursively summing file sizes
           size = _calculateFolderSize(entity.path);
         }
 
         results.add({
-          "name": entity.uri.pathSegments.last,
+          "name": entity.uri.pathSegments.last == ''?'folder':entity.uri.pathSegments.last,
           "path": entity.path,
           "type": type,
           "size": size,
         });
 
         if (type == "folder") {
-          // Add folder contents recursively
           results.addAll(getFolderContents(entity.path));
         }
       }
@@ -196,7 +206,6 @@ class SocketService with ChangeNotifier {
     return results;
   }
 
-// Helper function to recursively calculate the folder size
   int _calculateFolderSize(String folderPath) {
     int totalSize = 0;
     try {
@@ -208,8 +217,7 @@ class SocketService with ChangeNotifier {
         if (stats.type == FileSystemEntityType.file) {
           totalSize += stats.size;
         } else if (stats.type == FileSystemEntityType.directory) {
-          totalSize +=
-              _calculateFolderSize(entity.path); // Recursively add folder sizes
+          totalSize += _calculateFolderSize(entity.path);
         }
       }
     } catch (e) {
@@ -222,33 +230,4 @@ class SocketService with ChangeNotifier {
   factory SocketService() {
     return _instance;
   }
-
-  // List<Map<String, String>> getFolderContents(String folderPath) {
-  //   List<Map<String, String>> results = [];
-
-  //   try {
-  //     Directory folder = Directory(folderPath);
-  //     List<FileSystemEntity> entities = folder.listSync();
-
-  //     for (var entity in entities) {
-  //       FileStat stats = entity.statSync();
-  //       String type =
-  //           stats.type == FileSystemEntityType.directory ? "folder" : "file";
-
-  //       results.add({
-  //         "name": entity.uri.pathSegments.last,
-  //         "path": entity.path,
-  //         "type": type,
-  //       });
-
-  //       if (type == "folder") {
-  //         results.addAll(getFolderContents(entity.path));
-  //       }
-  //     }
-  //   } catch (e) {
-  //     print("Error reading folder: $e");
-  //   }
-  //   // print(results);
-  //   return results;
-  // }
 }
