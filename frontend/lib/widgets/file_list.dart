@@ -27,7 +27,7 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
   List<Map<String, dynamic>> convertToNestedStructure(
       List<Map<String, dynamic>> fileList) {
     void addToNestedStructure(Map<String, dynamic> currentFolder,
-        List<String> pathParts, String name, String type, String id, String ip, double? size) {
+        List<String> pathParts, String name, String type, String id, String ip, int size) {
       if (pathParts.isEmpty) return;
 
       String currentPart = pathParts.removeAt(0);
@@ -73,7 +73,7 @@ class _FileListState extends State<FileList> with TickerProviderStateMixin {
       String type = file['fileType'];
       String id = file['_id'];
       String ip = file['ip'];
-      double? size = file['size']; // change
+      int size = file['size']; // change
       if (pathParts.length == 1) {
         // Top-level file or folder
         if (type == "file" || name.contains('.')) {

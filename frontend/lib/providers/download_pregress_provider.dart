@@ -6,6 +6,7 @@ class FileDownload {
   int downloadedBytes;
   int totalBytes;
   bool isCompleted;
+  bool isPaused;
 
   FileDownload({
     required this.fileName,
@@ -13,6 +14,7 @@ class FileDownload {
     this.downloadedBytes = 0,
     required this.totalBytes,
     this.isCompleted = false,
+    this.isPaused = false,
   });
 }
 
@@ -33,6 +35,12 @@ class DownloadProvider extends ChangeNotifier {
     if (downloadedBytes >= file.totalBytes) {
       file.isCompleted = true;
     }
+    notifyListeners();
+  }
+
+  void togglePause(String fileName) {
+    final file = _downloads.firstWhere((f) => f.fileName == fileName);
+    file.isPaused = !file.isPaused;
     notifyListeners();
   }
 

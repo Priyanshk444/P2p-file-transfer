@@ -49,7 +49,7 @@ class DownloadProgressList extends StatelessWidget {
                   color: Colors.white,
                 ),
                 onPressed: () {
-                  // Handle pause/resume functionality if needed
+                  downloadProvider.togglePause(file.fileName);
                 },
               ),
             ],

@@ -6,6 +6,9 @@ class FileSender {
   final String senderIP;
   final int availablePort;
   final int size;
+  int _resumeOffset = 0; // ✅ Keep track of resume position
+  bool _isPaused = false; // ✅ Track if paused
+
   FileSender({required this.filePath, required this.senderIP, required this.availablePort , required this.size});
 
   Future<void> startSendingFile() async {
@@ -25,26 +28,45 @@ class FileSender {
       
       ws.add(jsonEncode({"type": "startFile", "fileName": fileName , "size": size}));
 
-      final stream = file.openRead();
-      await for (final chunk in stream) {
-        if (ws.readyState == WebSocket.open) {
-          final base64Chunk = base64Encode(chunk);
-          ws.add(jsonEncode({"type": "fileChunk", "chunk": base64Chunk}));
-        } else {
-          print("WebSocket is not open. Stopping file transfer.");
-          break;
+      await for (final message in ws) {
+        final data = jsonDecode(message);
+
+        if (data['type'] == 'resume') {
+          _resumeOffset = data['receivedBytes']; // ✅ Resume from where it left off
+          print("Resuming file transfer from byte $_resumeOffset");
+          _sendChunks(ws, file);
         }
       }
-
-      ws.add(jsonEncode({"type": "endOfFile"}));
-      print("File transfer complete.");
-
-      await ws.close();
-      await server.close(force: true);
-      print("WebSocket server closed, releasing port.");
+      
     }, onError: (error) {
       print("WebSocket server error: $error");
       server.close();
     });
+  }
+
+  Future<void> _sendChunks(WebSocket ws, File file) async {
+    final stream = file.openRead(_resumeOffset);
+    await for (final chunk in stream) {
+      if (_isPaused) break; 
+
+      final base64Chunk = base64Encode(chunk);
+      ws.add(jsonEncode({"type": "fileChunk", "chunk": base64Chunk}));
+    }
+
+    if (!_isPaused) {
+      ws.add(jsonEncode({"type": "endOfFile"}));
+      print("File transfer complete.");
+    }
+  }
+
+  void pauseSending() {
+    _isPaused = true;
+    print("File sending paused at $_resumeOffset.");
+  }
+
+  void resumeSending(WebSocket ws, File file) {
+    _isPaused = false;
+    print("Resuming file transfer from byte $_resumeOffset.");
+    _sendChunks(ws, file);
   }
 }
